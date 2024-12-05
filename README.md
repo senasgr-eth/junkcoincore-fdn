@@ -1,4 +1,4 @@
-# junkcoin-core-wallet
+# Core Wallet (junkcoin-core-wallet)
 This repository is prepared for the development and maintenance of the Junkcoin Core Wallet.
 
 - **Branches**:
