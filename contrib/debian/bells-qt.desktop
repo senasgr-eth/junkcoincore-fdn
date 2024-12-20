@@ -1,0 +1,12 @@
+[Desktop Entry]
+Name=JunkCoin Core
+Comment=Connect to the JunkCoin P2P Network
+Comment[de]=Verbinde mit dem JunkCoin peer-to-peer Netzwerk
+Comment[fr]=JunkCoin, monnaie virtuelle cryptographique pair à pair
+Comment[tr]=JunkCoin, eşten eşe kriptografik sanal para birimi
+Exec=junkcoin-qt %u
+Terminal=false
+Type=Application
+Icon=junkcoin128
+MimeType=x-scheme-handler/junkcoin;
+Categories=Office;Finance;

@@ -1,0 +1,6 @@
+usr/local/bin/junkcoin-qt usr/bin
+share/pixmaps/junkcoin32.xpm usr/share/pixmaps
+share/pixmaps/junkcoin16.xpm usr/share/pixmaps
+share/pixmaps/junkcoin128.png usr/share/pixmaps
+debian/junkcoin-qt.desktop usr/share/applications
+debian/junkcoin-qt.protocol usr/share/kde4/services/
