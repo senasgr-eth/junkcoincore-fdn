@@ -1,0 +1,11 @@
+[Protocol]
+exec=junkcoin-qt '%u'
+protocol=junkcoin
+input=none
+output=none
+helper=true
+listing=
+reading=false
+writing=false
+makedir=false
+deleting=false

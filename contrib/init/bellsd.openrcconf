@@ -1,0 +1,33 @@
+# /etc/conf.d/junkcoind: config file for /etc/init.d/junkcoind
+
+# Config file location
+#junkcoind_CONFIGFILE="/etc/junkcoin/junkcoin.conf"
+
+# What directory to write pidfile to?  (created and owned by $junkcoind_USER)
+#junkcoind_PIDDIR="/var/run/junkcoind"
+
+# What filename to give the pidfile
+#junkcoind_PIDFILE="${junkcoind_PIDDIR}/junkcoind.pid"
+
+# Where to write junkcoind data (be mindful that the blockchain is large)
+#junkcoind_DATADIR="/var/lib/junkcoind"
+
+# User and group to own junkcoind process
+#junkcoind_USER="junkcoin"
+#junkcoind_GROUP="junkcoin"
+
+# Path to junkcoind executable
+#junkcoind_BIN="/usr/bin/junkcoind"
+
+# Nice value to run junkcoind under
+#junkcoind_NICE=0
+
+# Additional options (avoid -conf and -datadir, use flags above)
+junkcoind_OPTS="-disablewallet"
+
+# The timeout in seconds OpenRC will wait for junkcoind to terminate
+# after a SIGTERM has been raised.
+# Note that this will be mapped as argument to start-stop-daemon's
+# '--retry' option, which means you can specify a retry schedule
+# here. For more information see man 8 start-stop-daemon.
+junkcoind_SIGTERM_TIMEOUT=60
