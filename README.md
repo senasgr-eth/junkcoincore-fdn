@@ -1,4 +1,6 @@
-<img src="https://github.com/Junkcoin-Foundation/junkcoin-docs/blob/main/assets/logos/logo-junkcoin-horizontal-2500px.png" alt="Junkcoin Logo" width="350"/>
+<p align="center">
+  <img src="https://github.com/Junkcoin-Foundation/junkcoin-docs/blob/main/assets/logos/logo-junkcoin-horizontal-2500px.png" alt="Junkcoin Logo" width="350"/>
+</p>
 
 # Junkcoin Core Wallet
 
