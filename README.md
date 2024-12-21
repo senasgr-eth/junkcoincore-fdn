@@ -4,14 +4,10 @@ The **Junkcoin Core Wallet** repository hosts the source code for the core walle
 
 This repository serves as the foundation for the development, maintenance, and continuous improvement of the Junkcoin Core Wallet, ensuring stability, security, and performance.
 
----
-
 ## Branches
 This repository follows a clear branching strategy:
 - **`main`**: Stable releases. This is the default branch, hosting thoroughly tested and production-ready code.
 - **`dev`**: Active development and feature work. All new contributions and updates are first merged here before reaching `main`.
-
----
 
 ## Mining Rules
 Junkcoin operates on a **Proof-of-Work (PoW)** consensus mechanism. Its current mining parameters include:
@@ -37,13 +33,9 @@ This innovative feature brings an element of unpredictability and fun to the min
 - **Connection**: 9771
 - **JSON-RPC**: 9772
 
----
-
 ## Official Junkcoin Website and Community Forum
 For more information, please visit the official Junkcoin website:
 [https://junk-coin.com](https://junk-coin.com)
-
----
 
 ## License
 This project is licensed under the **MIT License**, ensuring it remains open-source and community-driven.
