@@ -1,3 +1,5 @@
+<img src="https://github.com/Junkcoin-Foundation/junkcoin-docs/blob/main/assets/logos/logo-junkcoin-horizontal-2500px.png" alt="Junkcoin Logo" width="350"/>
+
 # Junkcoin Core Wallet
 
 The **Junkcoin Core Wallet** repository hosts the source code for the core wallet of Junkcoin, a historic blockchain launched on **May 3, 2013**, and revived in **November 2024**. Designed as a fork of Litecoin, Junkcoin combines the reliability of Litecoin with exciting features like **random bonus blocks**, making mining a unique and engaging experience.
