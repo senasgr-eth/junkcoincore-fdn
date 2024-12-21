@@ -33,6 +33,10 @@ This innovative feature brings an element of unpredictability and fun to the min
 - **Connection**: 9771
 - **JSON-RPC**: 9772
 
+### **Testnet Ports**
+- **Connection**: 19771
+- **JSON-RPC**: 19772
+
 ## Official Junkcoin Website and Community Forum
 For more information, please visit the official Junkcoin website:
 [https://junk-coin.com](https://junk-coin.com)
