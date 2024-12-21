@@ -29,6 +29,8 @@ In addition to the regular mining rewards, Junkcoin features **random bonus bloc
 
 This innovative feature brings an element of unpredictability and fun to the mining process, setting Junkcoin apart from other PoW cryptocurrencies.
 
+## Ports
+
 ### **Default Ports**
 - **Connection**: 9771
 - **JSON-RPC**: 9772
