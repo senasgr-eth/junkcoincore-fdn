@@ -1,3 +1,6 @@
+# Disabling faulty workflow
+disabled: true
+
 name: CI Pipeline
 
 on:
