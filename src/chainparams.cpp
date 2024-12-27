@@ -275,9 +275,9 @@ public:
 
 
         consensus.powLimit = uint256S("0x00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"); // ~uint256(0) >> 20;
-        consensus.nPowTargetTimespan = 24 * 60 * 60; // Same as mainnet: 1 day
+        consensus.nPowTargetTimespan = 4 * 60 * 60; // 4H
         consensus.nPowTargetSpacing = 60; // Same as mainnet: 1 minute
-        consensus.nCoinbaseMaturity = 70; // Same as mainnet
+        consensus.nCoinbaseMaturity = 30; 
         consensus.fPowNoRetargeting = false;
         consensus.fPowAllowMinDifficultyBlocks = true; // Only difference: allow min difficulty initially
 
