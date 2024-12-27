@@ -186,7 +186,8 @@ public:
         assert(genesis.hashMerkleRoot == uint256S("0x3de124b0274307911fe12550e96bf76cb92c12835db6cb19f82658b8aca1dbc8"));
 
         // Note that of those with the service bits flag, most only support a subset of possible options
-        //vSeeds.push_back(CDNSSeedData("junkcoinfoundation.org", "dnsseed.junkcoinfoundation.org", true));
+        vSeeds.push_back(CDNSSeedData("junk-coin.com", "mainnet.junk-coin.com"));
+        vSeeds.push_back(CDNSSeedData("103.133.25.201", "103.133.25.201:9771")); // Port 9771
 
         base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1,16);
         base58Prefixes[SCRIPT_ADDRESS] = std::vector<unsigned char>(1,5);
@@ -372,8 +373,8 @@ public:
         //assert(genesis.hashMerkleRoot == uint256S("0x6f80efd038566e1e3eab3e1d38131604d06481e77f2462235c6a9a94b1f8abf9"));
 
         // nodes with support for servicebits filtering should be at the top
-        //vSeeds.push_back(CDNSSeedData("belscan.io", "testnetseed.belscan.io", true));
-        //vSeeds.push_back(CDNSSeedData("belscan.io", "testnetseeder.belscan.io", true));
+        vSeeds.push_back(CDNSSeedData("junk-coin.com", "testnet.junk-coin.com"));
+        vSeeds.push_back(CDNSSeedData("103.133.25.201", "103.133.25.201:19771")); // Port 19771
 
         base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1,16);
         base58Prefixes[SCRIPT_ADDRESS] = std::vector<unsigned char>(1,5);
