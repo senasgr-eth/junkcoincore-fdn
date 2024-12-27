@@ -248,13 +248,10 @@ CAmount GetJunkcoinBlockSubsidy(int nHeight, int nFees, const Consensus::Params&
             } else if (nHeight < 5913000) {
                 nSubsidy = 0.09765625 * COIN;
             } else {
-                nSubsidy = 0.048828125 * COIN;
+                nSubsidy = 0.04882812 * COIN;
             }
         }
     }
-
-    // Limit to 8 decimal places
-    nSubsidy = (nSubsidy / COIN) * COIN; // Truncate to 8 decimals
 
     // Random bonus logic (unchanged)
     int rand = generateMTRandom(nHeight, 100000);
