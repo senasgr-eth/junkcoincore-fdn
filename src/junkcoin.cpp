@@ -170,62 +170,99 @@ CAmount GetJunkcoinBlockSubsidy(int nHeight, int nFees, const Consensus::Params&
 {
     CAmount nSubsidy;
 
-    if (nHeight < 101) // the first 100 blocks = 1 million junkcoins will serve as bounty (pool, exchange, faucet, wiki etc), reserved.
-    {
-        nSubsidy = 1000 * COIN;
-    }
-    else if (nHeight < 1541) // 1st day
-    {
-        nSubsidy = 500 * COIN;
-    }
-    else if (nHeight < 2981) // 2nd day
-    {
-        nSubsidy = 200 * COIN;
-    }
-    else if (nHeight < 5861) // 3rd and 4th days
-    {
-        nSubsidy = 100 * COIN;
-    }
-    else
-    {
-        // Implementing the new halving schedule
-        if (nHeight < 262800) {
-            nSubsidy = 50 * COIN;
-        } else if (nHeight < 394200) {
-            nSubsidy = 25 * COIN;
-        } else if (nHeight < 657000) {
-            nSubsidy = 12.5 * COIN;
-        } else if (nHeight < 1182600) {
-            nSubsidy = 6.25 * COIN;
-        } else if (nHeight < 1971000) {
-            nSubsidy = 3.125 * COIN;
-        } else if (nHeight < 2759400) {
-            nSubsidy = 1.5625 * COIN;
-        } else if (nHeight < 3547800) {
-            nSubsidy = 0.78125 * COIN;
-        } else if (nHeight < 4336200) {
-            nSubsidy = 0.390625 * COIN;
-        } else if (nHeight < 5124600) {
-            nSubsidy = 0.1953125 * COIN;
-        } else if (nHeight < 5913000) {
-            nSubsidy = 0.09765625 * COIN;
-        } else {
-            nSubsidy = 0.048828125 * COIN;
-        }
-
-        // Limit to 8 decimal places
-        nSubsidy = (nSubsidy / COIN) * COIN; // Truncate to 8 decimals
-
-        // Random bonus logic (unchanged)
-        int rand = generateMTRandom(nHeight, 100000);
-        if (rand > 99990) {
+    // Check if we're on testnet
+    if (consensusParams.fPowAllowMinDifficultyBlocks) {
+        // Testnet reward schedule with reduced block lengths
+        if (nHeight < 101) {
             nSubsidy = 1000 * COIN;
-        } else if (rand < 1001) {
-            nSubsidy *= 3;
         }
+        else if (nHeight < 201) { // 1st day
+            nSubsidy = 500 * COIN;
+        }
+        else if (nHeight < 401) { // 2nd day
+            nSubsidy = 200 * COIN;
+        }
+        else if (nHeight < 601) { // 3rd and 4th days
+            nSubsidy = 100 * COIN;
+        }
+        else {
+            // Implementing the new halving schedule for testnet
+            if (nHeight < 801) {
+                nSubsidy = 50 * COIN;
+            } else if (nHeight < 1001) {
+                nSubsidy = 25 * COIN;
+            } else if (nHeight < 657000) {
+                nSubsidy = 12.5 * COIN;
+            } else if (nHeight < 1182600) {
+                nSubsidy = 6.25 * COIN;
+            } else if (nHeight < 1971000) {
+                nSubsidy = 3.125 * COIN;
+            } else if (nHeight < 2759400) {
+                nSubsidy = 1.5625 * COIN;
+            } else if (nHeight < 3547800) {
+                nSubsidy = 0.78125 * COIN;
+            } else if (nHeight < 4336200) {
+                nSubsidy = 0.390625 * COIN;
+            } else if (nHeight < 5124600) {
+                nSubsidy = 0.1953125 * COIN;
+            } else if (nHeight < 5913000) {
+                nSubsidy = 0.09765625 * COIN;
+            } else {
+                nSubsidy = 0.048828125 * COIN;
+            }
+        }
+    } else {
+        // Mainnet reward schedule (unchanged)
+        if (nHeight < 101) {
+            nSubsidy = 1000 * COIN;
+        }
+        else if (nHeight < 1541) { // 1st day
+            nSubsidy = 500 * COIN;
+        }
+        else if (nHeight < 2981) { // 2nd day
+            nSubsidy = 200 * COIN;
+        }
+        else if (nHeight < 5861) { // 3rd and 4th days
+            nSubsidy = 100 * COIN;
+        }
+        else {
+            // Implementing the new halving schedule for mainnet
+            if (nHeight < 262800) {
+                nSubsidy = 50 * COIN;
+            } else if (nHeight < 394200) {
+                nSubsidy = 25 * COIN;
+            } else if (nHeight < 657000) {
+                nSubsidy = 12.5 * COIN;
+            } else if (nHeight < 1182600) {
+                nSubsidy = 6.25 * COIN;
+            } else if (nHeight < 1971000) {
+                nSubsidy = 3.125 * COIN;
+            } else if (nHeight < 2759400) {
+                nSubsidy = 1.5625 * COIN;
+            } else if (nHeight < 3547800) {
+                nSubsidy = 0.78125 * COIN;
+            } else if (nHeight < 4336200) {
+                nSubsidy = 0.390625 * COIN;
+            } else if (nHeight < 5124600) {
+                nSubsidy = 0.1953125 * COIN;
+            } else if (nHeight < 5913000) {
+                nSubsidy = 0.09765625 * COIN;
+            } else {
+                nSubsidy = 0.048828125 * COIN;
+            }
+        }
+    }
+
+    // Limit to 8 decimal places
+    nSubsidy = (nSubsidy / COIN) * COIN; // Truncate to 8 decimals
+
+    // Random bonus logic (unchanged)
+    int rand = generateMTRandom(nHeight, 100000);
+    if (rand > 99990) {
+        nSubsidy = 1000 * COIN;
+    } else if (rand < 1001) {
+        nSubsidy *= 3;
     }
 
     return nSubsidy + nFees;
 }
-
-
