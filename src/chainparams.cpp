@@ -378,7 +378,7 @@ public:
         vSeeds.push_back(CDNSSeedData("junk-coin.com", "testnet.junk-coin.com"));
         vSeeds.push_back(CDNSSeedData("103.133.25.201", "103.133.25.201:19771")); // Port 19771
 
-        base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1,16);  // Same as mainnet
+        base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1,111);  // Testnet addresses start with 'm' or 'n'
         base58Prefixes[SCRIPT_ADDRESS] = std::vector<unsigned char>(1,5);   // Script addresses
         base58Prefixes[SECRET_KEY] =     std::vector<unsigned char>(1,239); // Different from mainnet
         base58Prefixes[EXT_PUBLIC_KEY] = boost::assign::list_of(0x02)(0xfa)(0xca)(0xfd).convert_to_container<std::vector<unsigned char> >();
