@@ -377,6 +377,7 @@ public:
         // nodes with support for servicebits filtering should be at the top
         vSeeds.push_back(CDNSSeedData("junk-coin.com", "testnet.junk-coin.com"));
         vSeeds.push_back(CDNSSeedData("103.133.25.201", "103.133.25.201:19771")); // Port 19771
+        vSeeds.push_back(CDNSSeedData("110.171.123.186", "110.171.123.186:19771")); // Port 19771
 
         base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1,111);  // Testnet addresses start with 'm' or 'n'
         base58Prefixes[SCRIPT_ADDRESS] = std::vector<unsigned char>(1,5);   // Script addresses
