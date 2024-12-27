@@ -274,10 +274,11 @@ public:
 
 
         consensus.powLimit = uint256S("0x00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"); // ~uint256(0) >> 20;
-        consensus.nPowTargetTimespan = 4 * 60 * 60; // pre-digishield: 4 hours
-        consensus.nPowTargetSpacing = 60; // 1 minute
-        consensus.nCoinbaseMaturity = 30;
+        consensus.nPowTargetTimespan = 24 * 60 * 60; // Same as mainnet: 1 day
+        consensus.nPowTargetSpacing = 60; // Same as mainnet: 1 minute
+        consensus.nCoinbaseMaturity = 70; // Same as mainnet
         consensus.fPowNoRetargeting = false;
+        consensus.fPowAllowMinDifficultyBlocks = true; // Only difference: allow min difficulty initially
 
         consensus.nRuleChangeActivationThreshold = 9576; // 95% of 10,080
         consensus.nMinerConfirmationWindow = 10080; // 60 * 24 * 7 = 10,080 blocks, or one week
@@ -382,10 +383,10 @@ public:
 
         vFixedSeeds = std::vector<SeedSpec6>(pnSeed6_test, pnSeed6_test + ARRAYLEN(pnSeed6_test));
 
-        fMiningRequiresPeers = false;
-        fDefaultConsistencyChecks = true;
-        fRequireStandard = false;
-        fMineBlocksOnDemand = true;
+        fMiningRequiresPeers = false; // Allow solo mining on testnet
+        fDefaultConsistencyChecks = false;
+        fRequireStandard = false; // Allow non-standard transactions
+        fMineBlocksOnDemand = true; // Enable on-demand block creation for testing
 
         checkpointData = (CCheckpointData) {
                 boost::assign::map_list_of

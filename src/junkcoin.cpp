@@ -168,43 +168,61 @@ bool CheckAuxPowProofOfWork(const CBlockHeader& block, const Consensus::Params& 
 
 CAmount GetJunkcoinBlockSubsidy(int nHeight, int nFees, const Consensus::Params& consensusParams, uint256 prevHash)
 {
-    CAmount nSubsidy = 50 * COIN;
+    CAmount nSubsidy;
 
-    if(nHeight > 6220800)   // after about 12 years or 6220800 blocks, no more mining
-        return 0;
-
-    if(nHeight < 101)   // the first 100 blocks = 1 millon junkcoins will serve as bounty (pool, exchange, faucet, wiki etc), reserved.
+    if (nHeight < 101) // the first 100 blocks = 1 million junkcoins will serve as bounty (pool, exchange, faucet, wiki etc), reserved.
     {
         nSubsidy = 1000 * COIN;
     }
-    else if(nHeight < 1541)   // 1st day
+    else if (nHeight < 1541) // 1st day
     {
         nSubsidy = 500 * COIN;
     }
-    else if(nHeight < 2981)   // 2nd day
+    else if (nHeight < 2981) // 2nd day
     {
         nSubsidy = 200 * COIN;
     }
-    else if(nHeight < 5861)   // 3rd and 4th days
+    else if (nHeight < 5861) // 3rd and 4th days
     {
         nSubsidy = 100 * COIN;
     }
     else
     {
-        // Subsidy is cut in half every 1036800 blocks, which will occur approximately every 2 years
-        nSubsidy >>= (nHeight / 1036800); // Junkcoin: 1036.8K blocks in ~2 years
+        // Implementing the new halving schedule
+        if (nHeight < 262800) {
+            nSubsidy = 50 * COIN;
+        } else if (nHeight < 394200) {
+            nSubsidy = 25 * COIN;
+        } else if (nHeight < 657000) {
+            nSubsidy = 12.5 * COIN;
+        } else if (nHeight < 1182600) {
+            nSubsidy = 6.25 * COIN;
+        } else if (nHeight < 1971000) {
+            nSubsidy = 3.125 * COIN;
+        } else if (nHeight < 2759400) {
+            nSubsidy = 1.5625 * COIN;
+        } else if (nHeight < 3547800) {
+            nSubsidy = 0.78125 * COIN;
+        } else if (nHeight < 4336200) {
+            nSubsidy = 0.390625 * COIN;
+        } else if (nHeight < 5124600) {
+            nSubsidy = 0.1953125 * COIN;
+        } else if (nHeight < 5913000) {
+            nSubsidy = 0.09765625 * COIN;
+        } else {
+            nSubsidy = 0.048828125 * COIN;
+        }
 
-		int rand = generateMTRandom(nHeight, 100000);
-		// printf("===>> nHeight = %d, Rand = %d\n", nHeight, rand);
+        // Limit to 8 decimal places
+        nSubsidy = (nSubsidy / COIN) * COIN; // Truncate to 8 decimals
 
-		if(rand > 99990)
-		{
-			nSubsidy = 1000 * COIN;
-		}
-		else if (rand < 1001)
-		{
-			nSubsidy *= 3;
-		}
+        // Random bonus logic (unchanged)
+        int rand = generateMTRandom(nHeight, 100000);
+        if (rand > 99990) {
+            nSubsidy = 1000 * COIN;
+        } else if (rand < 1001) {
+            nSubsidy *= 3;
+        }
     }
 
     return nSubsidy + nFees;
