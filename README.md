@@ -2,11 +2,11 @@
   <img src="https://github.com/Junkcoin-Foundation/junkcoin-docs/blob/main/assets/logos/logo-junkcoin-horizontal-2500px.png" alt="Junkcoin Logo" width="350"/>
 </p>
 
-# Junkcoin Core Wallet
+# Junkcoin Core
 
-The **Junkcoin Core Wallet** repository hosts the source code for the core wallet of Junkcoin, a historic blockchain launched on **May 3, 2013**, and revived in **November 2024**. Designed as a fork of Litecoin, Junkcoin combines the reliability of Litecoin with exciting features like **random bonus blocks**, making mining a unique and engaging experience.
+The **Junkcoin Core** repository hosts the source code for the core of Junkcoin, a historic blockchain launched on **May 3, 2013**, and revived in **November 2024**. Designed as a fork of Litecoin, Junkcoin combines the reliability of Litecoin with exciting features like **random bonus blocks**, making mining a unique and engaging experience.
 
-This repository serves as the foundation for the development, maintenance, and continuous improvement of the Junkcoin Core Wallet, ensuring stability, security, and performance.
+This repository serves as the foundation for the development, maintenance, and continuous improvement of the Junkcoin Core, ensuring stability, security, and performance.
 
 ## Branches
 This repository follows a clear branching strategy:
@@ -43,9 +43,17 @@ This innovative feature brings an element of unpredictability and fun to the min
 - **Connection**: 19771
 - **JSON-RPC**: 19772
 
-## Official Junkcoin Website and Community Forum
+## Official Junkcoin Website
 For more information, please visit the official Junkcoin website:
 [https://junk-coin.com](https://junk-coin.com)
+
+## Technical Support
+For technical support, join our dedicated developer channel on Telegram. Simply contact the admins in our main Telegram group and request access:
+[https://t.me/junkcoin_JKC](https://t.me/junkcoin_JKC)
+
+## Official Junkcoin Twitter
+Join us on Twitter here:
+[https://twitter.com/junkcoin_JKC](https://twitter.com/junkcoin_JKC)
 
 ## License
 This project is licensed under the **MIT License**, ensuring it remains open-source and community-driven.
