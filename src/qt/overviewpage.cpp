@@ -20,12 +20,11 @@
 #include <QAbstractItemDelegate>
 #include <QPainter>
 
-#define DECORATION_SIZE 54
-#define NUM_ITEMS 5
+#define DECORATION_SIZE 48
+#define NUM_ITEMS 7
 
 class TxViewDelegate : public QAbstractItemDelegate
 {
-    Q_OBJECT
 public:
     TxViewDelegate(const PlatformStyle *_platformStyle, QObject *parent=nullptr):
         QAbstractItemDelegate(parent), unit(BitcoinUnits::BTC),
@@ -55,7 +54,7 @@ public:
         qint64 amount = index.data(TransactionTableModel::AmountRole).toLongLong();
         bool confirmed = index.data(TransactionTableModel::ConfirmedRole).toBool();
         QVariant value = index.data(Qt::ForegroundRole);
-        QColor foreground = option.palette.color(QPalette::Text);
+        QColor foreground = THEME_TEXT;
         if(value.canConvert<QBrush>())
         {
             QBrush brush = qvariant_cast<QBrush>(value);
@@ -83,7 +82,7 @@ public:
         }
         else
         {
-            foreground = option.palette.color(QPalette::Text);
+            foreground = THEME_GOLD;
         }
         painter->setPen(foreground);
         QString amountText = BitcoinUnits::formatWithUnit(unit, amount, true, BitcoinUnits::separatorAlways);
@@ -93,7 +92,7 @@ public:
         }
         painter->drawText(amountRect, Qt::AlignRight|Qt::AlignVCenter, amountText);
 
-        painter->setPen(option.palette.color(QPalette::Text));
+        painter->setPen(THEME_TEXT);
         painter->drawText(amountRect, Qt::AlignLeft|Qt::AlignVCenter, GUIUtil::dateTimeStr(date));
 
         painter->restore();
@@ -130,12 +129,10 @@ OverviewPage::OverviewPage(const PlatformStyle *platformStyle, QWidget *parent) 
     icon.addPixmap(icon.pixmap(QSize(64,64), QIcon::Normal), QIcon::Disabled); // also set the disabled icon because we are using a disabled QPushButton to work around missing HiDPI support of QLabel (https://bugreports.qt.io/browse/QTBUG-42503)
     ui->labelTransactionsStatus->setIcon(icon);
     ui->labelWalletStatus->setIcon(icon);
-
-    //set the current version
+    
+     //set the current version
     ui->label_wallet_version_overlay->setText(QString::fromStdString(FormatFullVersion()));
-
-    // Set tip of the day
-    UpdateTip();
+    
 
     // Recent transactions
     ui->listTransactions->setItemDelegate(txdelegate);
@@ -149,25 +146,6 @@ OverviewPage::OverviewPage(const PlatformStyle *platformStyle, QWidget *parent) 
     showOutOfSyncWarning(true);
     connect(ui->labelWalletStatus, SIGNAL(clicked()), this, SLOT(handleOutOfSyncWarningClicks()));
     connect(ui->labelTransactionsStatus, SIGNAL(clicked()), this, SLOT(handleOutOfSyncWarningClicks()));
-}
-
-void OverviewPage::UpdateTip()
-{
-    QStringList tips = {
-        tr("Never share your wallet.dat file with anyone"),
-        tr("For advanced operations, use the console in 'Help' -> 'Debug Window'"),
-        tr("Encrypt your wallet with a strong passphrase for maximum security"),
-        tr("Make sure to keep your wallet software updated"),
-        tr("Backup your private key to recover your coins, using 'File' > 'Backup Wallet'"),
-        tr("Always do your own research before using an external cryptocurrency service"),
-        tr("Never share your private key with anyone"),
-        tr("Who owns the private keys, owns the coins"),
-        tr("To see ongoing development and contribute, check out the JunkCoin Core repository on GitHub"),
-        tr("Services that claim to double your junkcoin are always ponzi schemes")
-    };
-
-    int i = rand() % tips.length();
-    ui->label_tip->setText(tips[i]);
 }
 
 void OverviewPage::handleTransactionClicked(const QModelIndex &index)

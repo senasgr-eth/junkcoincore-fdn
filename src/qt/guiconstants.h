@@ -7,6 +7,7 @@
 #define BITCOIN_QT_GUICONSTANTS_H
 
 #include "validation.h"
+#include <QColor>
 
 /* Milliseconds between model updates */
 static const int MODEL_UPDATE_DELAY = 250;
@@ -19,13 +20,18 @@ static const int STATUSBAR_ICONSIZE = 16;
 
 static const bool DEFAULT_SPLASHSCREEN = true;
 
+/* Theme colors */
+static const QColor THEME_NAVY_BLUE(26, 32, 44);
+static const QColor THEME_GOLD(218, 165, 32);
+static const QColor THEME_TEXT(255, 255, 255);
+
 /* Invalid field background style */
 #define STYLE_INVALID "background:#FF8080"
 
 /* Transaction list -- unconfirmed transaction */
-#define COLOR_UNCONFIRMED QColor(128, 128, 128)
+static const QColor COLOR_UNCONFIRMED(128, 128, 128);
 /* Transaction list -- negative amount */
-#define COLOR_NEGATIVE QColor(255, 0, 0)
+static const QColor COLOR_NEGATIVE(255, 88, 88);
 /* Transaction list -- bare address (without label) */
 #define COLOR_BAREADDRESS QColor(140, 140, 140)
 /* Transaction list -- TX status decoration - open until date */
@@ -34,12 +40,6 @@ static const bool DEFAULT_SPLASHSCREEN = true;
 #define COLOR_TX_STATUS_DANGER QColor(200, 100, 100)
 /* Transaction list -- TX status decoration - default color */
 #define COLOR_BLACK QColor(0, 0, 0)
-
-
-#define COLOR_BLACK QColor(0, 0, 0)
-#define COLOR_GOLD QColor(255, 215, 0)  // Standard gold
-#define COLOR_DARK_GOLD QColor(218, 165, 32)  // Darker gold for highlights
-#define COLOR_LIGHT_TEXT QColor(255, 255, 255)  // White text for contrast
 
 /* Tooltips longer than this (in characters) are converted into rich text,
    so that they can be word-wrapped.

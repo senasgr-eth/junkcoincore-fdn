@@ -1,5 +1,5 @@
 *.tar.gz
-
+src/qt-ori
 *.exe
 src/junkcoin
 src/junkcoind
