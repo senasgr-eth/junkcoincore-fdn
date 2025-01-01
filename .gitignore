@@ -130,3 +130,7 @@ stage/
 *.ipr
 src/junkcoin-cli
 src/junkcoin-cli
+
+depends-build
+
+.codegpt

@@ -35,6 +35,12 @@ static const bool DEFAULT_SPLASHSCREEN = true;
 /* Transaction list -- TX status decoration - default color */
 #define COLOR_BLACK QColor(0, 0, 0)
 
+
+#define COLOR_BLACK QColor(0, 0, 0)
+#define COLOR_GOLD QColor(255, 215, 0)  // Standard gold
+#define COLOR_DARK_GOLD QColor(218, 165, 32)  // Darker gold for highlights
+#define COLOR_LIGHT_TEXT QColor(255, 255, 255)  // White text for contrast
+
 /* Tooltips longer than this (in characters) are converted into rich text,
    so that they can be word-wrapped.
  */

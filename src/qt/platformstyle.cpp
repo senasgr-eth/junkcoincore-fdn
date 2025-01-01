@@ -3,7 +3,6 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include "platformstyle.h"
-
 #include "guiconstants.h"
 
 #include <QApplication>
@@ -72,30 +71,32 @@ QIcon ColorizeIcon(const QString& filename, const QColor& colorbase)
 
 }
 
-
 PlatformStyle::PlatformStyle(const QString &_name, bool _imagesOnButtons, bool _colorizeIcons, bool _useExtraSpacing):
     name(_name),
     imagesOnButtons(_imagesOnButtons),
     colorizeIcons(_colorizeIcons),
     useExtraSpacing(_useExtraSpacing),
-    singleColor(0,0,0),
-    textColor(0,0,0)
+    singleColor(COLOR_GOLD),
+    textColor(COLOR_LIGHT_TEXT)
 {
-    // Determine icon highlighting color
-    if (colorizeIcons) {
-        const QColor colorHighlightBg(QApplication::palette().color(QPalette::Highlight));
-        const QColor colorHighlightFg(QApplication::palette().color(QPalette::HighlightedText));
-        const QColor colorText(QApplication::palette().color(QPalette::WindowText));
-        const int colorTextLightness = colorText.lightness();
-        QColor colorbase;
-        if (abs(colorHighlightBg.lightness() - colorTextLightness) < abs(colorHighlightFg.lightness() - colorTextLightness))
-            colorbase = colorHighlightBg;
-        else
-            colorbase = colorHighlightFg;
-        singleColor = colorbase;
-    }
-    // Determine text color
-    textColor = QColor(QApplication::palette().color(QPalette::WindowText));
+    // Apply black and gold theme
+    QPalette darkPalette = QApplication::palette();
+    
+    darkPalette.setColor(QPalette::Window, COLOR_BLACK);
+    darkPalette.setColor(QPalette::WindowText, COLOR_LIGHT_TEXT);
+    darkPalette.setColor(QPalette::Base, COLOR_BLACK);
+    darkPalette.setColor(QPalette::AlternateBase, COLOR_BLACK.lighter(120));
+    darkPalette.setColor(QPalette::ToolTipBase, COLOR_GOLD);
+    darkPalette.setColor(QPalette::ToolTipText, COLOR_BLACK);
+    darkPalette.setColor(QPalette::Text, COLOR_LIGHT_TEXT);
+    darkPalette.setColor(QPalette::Button, COLOR_BLACK);
+    darkPalette.setColor(QPalette::ButtonText, COLOR_GOLD);
+    darkPalette.setColor(QPalette::BrightText, COLOR_GOLD);
+    darkPalette.setColor(QPalette::Link, COLOR_GOLD);
+    darkPalette.setColor(QPalette::Highlight, COLOR_DARK_GOLD);
+    darkPalette.setColor(QPalette::HighlightedText, COLOR_BLACK);
+
+    QApplication::setPalette(darkPalette);
 }
 
 QImage PlatformStyle::SingleColorImage(const QString& filename) const
@@ -144,4 +145,3 @@ const PlatformStyle *PlatformStyle::instantiate(const QString &platformId)
     }
     return 0;
 }
-
