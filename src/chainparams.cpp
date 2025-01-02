@@ -186,13 +186,16 @@ public:
         assert(genesis.hashMerkleRoot == uint256S("0x3de124b0274307911fe12550e96bf76cb92c12835db6cb19f82658b8aca1dbc8"));
 
         // Note that of those with the service bits flag, most only support a subset of possible options
-        //vSeeds.push_back(CDNSSeedData("junkcoinfoundation.org", "dnsseed.junkcoinfoundation.org", true));
+        vSeeds.push_back(CDNSSeedData("junk-coin.com", "mainnet.junk-coin.com"));
+        vSeeds.push_back(CDNSSeedData("103.133.25.201", "103.133.25.201:9771")); // Port 9771
 
-        base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1,16);
-        base58Prefixes[SCRIPT_ADDRESS] = std::vector<unsigned char>(1,5);
-        base58Prefixes[SECRET_KEY] =     std::vector<unsigned char>(1,144);
+        base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1,16);  // Legacy addresses start with '7'
+        base58Prefixes[SCRIPT_ADDRESS] = std::vector<unsigned char>(1,5);   // Script addresses
+        base58Prefixes[SECRET_KEY] =     std::vector<unsigned char>(1,144); // WIF private keys start with 'N'
         base58Prefixes[EXT_PUBLIC_KEY] = boost::assign::list_of(0x04)(0x88)(0xB2)(0x1E).convert_to_container<std::vector<unsigned char> >();
         base58Prefixes[EXT_SECRET_KEY] = boost::assign::list_of(0x04)(0x88)(0xAD)(0xE4).convert_to_container<std::vector<unsigned char> >();
+
+        //bech32_hrp = "jc";   // SegWit addresses start with 'jc1q'
 
         vFixedSeeds = std::vector<SeedSpec6>(pnSeed6_main, pnSeed6_main + ARRAYLEN(pnSeed6_main));
 
@@ -274,10 +277,11 @@ public:
 
 
         consensus.powLimit = uint256S("0x00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"); // ~uint256(0) >> 20;
-        consensus.nPowTargetTimespan = 4 * 60 * 60; // pre-digishield: 4 hours
-        consensus.nPowTargetSpacing = 60; // 1 minute
-        consensus.nCoinbaseMaturity = 30;
+        consensus.nPowTargetTimespan = 4 * 60 * 60; // 4H
+        consensus.nPowTargetSpacing = 60; // Same as mainnet: 1 minute
+        consensus.nCoinbaseMaturity = 30; 
         consensus.fPowNoRetargeting = false;
+        consensus.fPowAllowMinDifficultyBlocks = true; // Only difference: allow min difficulty initially
 
         consensus.nRuleChangeActivationThreshold = 9576; // 95% of 10,080
         consensus.nMinerConfirmationWindow = 10080; // 60 * 24 * 7 = 10,080 blocks, or one week
@@ -371,21 +375,24 @@ public:
         //assert(genesis.hashMerkleRoot == uint256S("0x6f80efd038566e1e3eab3e1d38131604d06481e77f2462235c6a9a94b1f8abf9"));
 
         // nodes with support for servicebits filtering should be at the top
-        //vSeeds.push_back(CDNSSeedData("belscan.io", "testnetseed.belscan.io", true));
-        //vSeeds.push_back(CDNSSeedData("belscan.io", "testnetseeder.belscan.io", true));
+        vSeeds.push_back(CDNSSeedData("junk-coin.com", "testnet.junk-coin.com"));
+        vSeeds.push_back(CDNSSeedData("103.133.25.201", "103.133.25.201:19771")); // Port 19771
+        vSeeds.push_back(CDNSSeedData("110.171.123.186", "110.171.123.186:19771")); // Port 19771
 
-        base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1,16);
-        base58Prefixes[SCRIPT_ADDRESS] = std::vector<unsigned char>(1,5);
-        base58Prefixes[SECRET_KEY] =     std::vector<unsigned char>(1,150);
+        base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1,111);  // Testnet addresses start with 'm' or 'n'
+        base58Prefixes[SCRIPT_ADDRESS] = std::vector<unsigned char>(1,5);   // Script addresses
+        base58Prefixes[SECRET_KEY] =     std::vector<unsigned char>(1,239); // Different from mainnet
         base58Prefixes[EXT_PUBLIC_KEY] = boost::assign::list_of(0x02)(0xfa)(0xca)(0xfd).convert_to_container<std::vector<unsigned char> >();
         base58Prefixes[EXT_SECRET_KEY] = boost::assign::list_of(0x02)(0xfa)(0xc3)(0x98).convert_to_container<std::vector<unsigned char> >();
 
+        //bech32_hrp = "tjc";   // SegWit addresses start with 'tjc1q'
+
         vFixedSeeds = std::vector<SeedSpec6>(pnSeed6_test, pnSeed6_test + ARRAYLEN(pnSeed6_test));
 
-        fMiningRequiresPeers = false;
-        fDefaultConsistencyChecks = true;
-        fRequireStandard = false;
-        fMineBlocksOnDemand = true;
+        fMiningRequiresPeers = false; // Allow solo mining on testnet
+        fDefaultConsistencyChecks = false;
+        fRequireStandard = false; // Allow non-standard transactions
+        fMineBlocksOnDemand = true; // Enable on-demand block creation for testing
 
         checkpointData = (CCheckpointData) {
                 boost::assign::map_list_of
@@ -532,11 +539,13 @@ public:
         //vSeeds.push_back(CDNSSeedData("belscan.io", "testnetseed.belscan.io", true));
         //vSeeds.push_back(CDNSSeedData("belscan.io", "testnetseeder.belscan.io", true));
 
-        base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1,47);
-        base58Prefixes[SCRIPT_ADDRESS] = std::vector<unsigned char>(1,5);
-        base58Prefixes[SECRET_KEY] =     std::vector<unsigned char>(1,153);
+        base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1,47);  // Regtest specific
+        base58Prefixes[SCRIPT_ADDRESS] = std::vector<unsigned char>(1,5);   // Script addresses
+        base58Prefixes[SECRET_KEY] =     std::vector<unsigned char>(1,153); // Regtest specific
         base58Prefixes[EXT_PUBLIC_KEY] = boost::assign::list_of(0x02)(0xfa)(0xca)(0xfd).convert_to_container<std::vector<unsigned char> >();
         base58Prefixes[EXT_SECRET_KEY] = boost::assign::list_of(0x02)(0xfa)(0xc3)(0x98).convert_to_container<std::vector<unsigned char> >();
+
+        //bech32_hrp = "rjc";   // SegWit addresses start with 'rjc1q'
 
         vFixedSeeds = std::vector<SeedSpec6>(pnSeed6_main, pnSeed6_main + ARRAYLEN(pnSeed6_main));
 

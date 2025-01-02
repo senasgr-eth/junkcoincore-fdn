@@ -9,6 +9,7 @@
 
 #include "bitcoingui.h"
 
+#include <QPushButton>
 #include "bitcoinunits.h"
 #include "clientmodel.h"
 #include "guiconstants.h"
@@ -41,6 +42,7 @@
 
 #include <QAction>
 #include <QApplication>
+#include <QDesktopServices>
 #include <QDateTime>
 #include <QDesktopWidget>
 #include <QDragEnterEvent>
@@ -172,19 +174,16 @@ BitcoinGUI::BitcoinGUI(const PlatformStyle *_platformStyle, const NetworkStyle *
         setCentralWidget(rpcConsole);
     }
 
-    // junkcoin: load fallback font in case Comic Sans is not available on the system
-    QFontDatabase::addApplicationFont(":fonts/ComicNeue-Bold");
-    QFontDatabase::addApplicationFont(":fonts/ComicNeue-Bold-Oblique");
-    QFontDatabase::addApplicationFont(":fonts/ComicNeue-Light");
-    QFontDatabase::addApplicationFont(":fonts/ComicNeue-Light-Oblique");
-    QFontDatabase::addApplicationFont(":fonts/ComicNeue-Regular");
-    QFontDatabase::addApplicationFont(":fonts/ComicNeue-Regular-Oblique");
-    QFont::insertSubstitution("Comic Sans MS", "Comic Neue");
+    // Load IBM Plex Mono font family
+    QFontDatabase::addApplicationFont(":fonts/IBMPlexMono-Regular.ttf");
+    QFontDatabase::addApplicationFont(":fonts/IBMPlexMono-Bold.ttf");
+    QFontDatabase::addApplicationFont(":fonts/IBMPlexMono-Light.ttf");
+    QFontDatabase::addApplicationFont(":fonts/IBMPlexMono-Medium.ttf");
+    QFontDatabase::addApplicationFont(":fonts/IBMPlexMono-SemiBold.ttf");
+    QFontDatabase::addApplicationFont(":fonts/VT323-Regular.ttf");
 
-    // junkcoin: Specify Comic Sans as new font.
-    QFont newFont("Comic Sans MS", 10);
-
-    // junkcoin: Set new application font
+    // Set IBM Plex Mono as the default font
+    QFont newFont("IBM Plex Mono", 10);
     QApplication::setFont(newFont);
 
     // Accept D&D of URIs
@@ -198,7 +197,36 @@ BitcoinGUI::BitcoinGUI(const PlatformStyle *_platformStyle, const NetworkStyle *
     createMenuBar();
 
     // Create the toolbars
-    createToolBars();
+    // Create main navigation toolbar
+    QToolBar *mainToolBar = addToolBar(tr("Navigation"));
+    mainToolBar->setMovable(false);
+    mainToolBar->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+    mainToolBar->setStyleSheet(QString(
+        "QToolBar { background: %1; border: none; spacing: 0px; } "
+        "QToolButton { padding: 10px 20px; border: none; color: white; font-size: 14px; } "
+        "QToolButton:checked { background: rgba(255,255,255,0.1); color: %2; }"
+    ).arg(THEME_NAVY_BLUE.name(), THEME_GOLD.name()));
+
+    // Add navigation actions
+    mainToolBar->addAction(overviewAction);
+    mainToolBar->addAction(sendCoinsAction);
+    mainToolBar->addAction(receiveCoinsAction);
+    mainToolBar->addAction(historyAction);
+    
+    // Add Buy Junkcoin button
+    QPushButton* buyButton = new QPushButton(tr("Buy Junkcoin"), this);
+    buyButton->setStyleSheet(QString(
+        "QPushButton { background: %1; color: %2; padding: 10px 20px; border: none; border-radius: 5px; font-size: 14px; }"
+        "QPushButton:hover { background: %3; }"
+    ).arg(THEME_GOLD.name(), THEME_NAVY_BLUE.name(), THEME_GOLD.lighter(110).name()));
+    
+    // Connect button to open buy link
+    connect(buyButton, &QPushButton::clicked, this, []() {
+        QDesktopServices::openUrl(QUrl("https://junk-coin.com/buy-junkcoin-jkc/"));
+    });
+    
+    // Add button to status bar
+    statusBar()->addPermanentWidget(static_cast<QWidget*>(buyButton));
 
     // Create system tray icon and notification
     createTrayIcon(networkStyle);
@@ -248,7 +276,10 @@ BitcoinGUI::BitcoinGUI(const PlatformStyle *_platformStyle, const NetworkStyle *
     QString curStyle = QApplication::style()->metaObject()->className();
     if(curStyle == "QWindowsStyle" || curStyle == "QWindowsXPStyle")
     {
-        progressBar->setStyleSheet("QProgressBar { background-color: #e8e8e8; border: 1px solid grey; border-radius: 7px; padding: 1px; text-align: center; } QProgressBar::chunk { background: QLinearGradient(x1: 0, y1: 0, x2: 1, y2: 0, stop: 0 #FF8000, stop: 1 orange); border-radius: 7px; margin: 0px; }");
+        progressBar->setStyleSheet(QString(
+        "QProgressBar { background: %1; border: none; border-radius: 0px; text-align: center; color: white; } "
+        "QProgressBar::chunk { background: %2; }"
+    ).arg(THEME_NAVY_BLUE.darker(120).name(), THEME_GOLD.name()));
     }
 
     statusBar()->addWidget(progressBarLabel);
@@ -296,14 +327,14 @@ void BitcoinGUI::createActions()
 {
     QActionGroup *tabGroup = new QActionGroup(this);
 
-    overviewAction = new QAction(platformStyle->SingleColorIcon(":/icons/overview"), tr("&Wallet"), this);
+    overviewAction = new QAction(platformStyle->SingleColorIcon(":/icons/overview"), tr("&HOME"), this);
     overviewAction->setStatusTip(tr("Show general overview of wallet"));
     overviewAction->setToolTip(overviewAction->statusTip());
     overviewAction->setCheckable(true);
     overviewAction->setShortcut(QKeySequence(Qt::ALT + Qt::Key_1));
     tabGroup->addAction(overviewAction);
 
-    sendCoinsAction = new QAction(platformStyle->SingleColorIcon(":/icons/send"), tr("&Send"), this);
+    sendCoinsAction = new QAction(platformStyle->SingleColorIcon(":/icons/send"), tr("&SEND"), this);
     sendCoinsAction->setStatusTip(tr("Send coins to a JunkCoin address"));
     sendCoinsAction->setToolTip(sendCoinsAction->statusTip());
     sendCoinsAction->setCheckable(true);
@@ -314,7 +345,7 @@ void BitcoinGUI::createActions()
     sendCoinsMenuAction->setStatusTip(sendCoinsAction->statusTip());
     sendCoinsMenuAction->setToolTip(sendCoinsMenuAction->statusTip());
 
-    receiveCoinsAction = new QAction(platformStyle->SingleColorIcon(":/icons/receiving_addresses"), tr("&Receive"), this);
+    receiveCoinsAction = new QAction(platformStyle->SingleColorIcon(":/icons/receiving_addresses"), tr("&RECEIVE"), this);
     receiveCoinsAction->setStatusTip(tr("Request payments (generates QR codes and junkcoin: URIs)"));
     receiveCoinsAction->setToolTip(receiveCoinsAction->statusTip());
     receiveCoinsAction->setCheckable(true);
@@ -325,7 +356,7 @@ void BitcoinGUI::createActions()
     receiveCoinsMenuAction->setStatusTip(receiveCoinsAction->statusTip());
     receiveCoinsMenuAction->setToolTip(receiveCoinsMenuAction->statusTip());
 
-    historyAction = new QAction(platformStyle->SingleColorIcon(":/icons/history"), tr("&Transactions"), this);
+    historyAction = new QAction(platformStyle->SingleColorIcon(":/icons/history"), tr("&HISTORY"), this);
     historyAction->setStatusTip(tr("Browse transaction history"));
     historyAction->setToolTip(historyAction->statusTip());
     historyAction->setCheckable(true);

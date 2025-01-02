@@ -512,8 +512,8 @@ std::string HelpMessage(HelpMessageMode mode)
 
 std::string LicenseInfo()
 {
-    const std::string URL_SOURCE_CODE = "<https://github.com/junkcoin-community/junkcoin>";
-    const std::string URL_WEBSITE = "<https://github.com/junkcoin-community/junkcoin>";
+    const std::string URL_SOURCE_CODE = "<https://github.com/Junkcoin-Foundation/junkcoin-core>";
+    const std::string URL_WEBSITE = "<https://github.com/Junkcoin-Foundation/junkcoin-core>";
 
     return CopyrightHolders(strprintf(_("Copyright (C) %i-%i"), 2013, COPYRIGHT_YEAR) + " ") + "\n" +
            "\n" +

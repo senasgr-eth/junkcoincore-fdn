@@ -12,6 +12,7 @@
 #include <QImage>
 #include <QPalette>
 #include <QPixmap>
+#include <QStyleFactory>
 
 static const struct {
     const char *platformId;
@@ -76,26 +77,29 @@ QIcon ColorizeIcon(const QString& filename, const QColor& colorbase)
 PlatformStyle::PlatformStyle(const QString &_name, bool _imagesOnButtons, bool _colorizeIcons, bool _useExtraSpacing):
     name(_name),
     imagesOnButtons(_imagesOnButtons),
-    colorizeIcons(_colorizeIcons),
+    colorizeIcons(true), // Always colorize icons for our theme
     useExtraSpacing(_useExtraSpacing),
-    singleColor(0,0,0),
-    textColor(0,0,0)
+    singleColor(THEME_GOLD),
+    textColor(THEME_TEXT)
 {
-    // Determine icon highlighting color
-    if (colorizeIcons) {
-        const QColor colorHighlightBg(QApplication::palette().color(QPalette::Highlight));
-        const QColor colorHighlightFg(QApplication::palette().color(QPalette::HighlightedText));
-        const QColor colorText(QApplication::palette().color(QPalette::WindowText));
-        const int colorTextLightness = colorText.lightness();
-        QColor colorbase;
-        if (abs(colorHighlightBg.lightness() - colorTextLightness) < abs(colorHighlightFg.lightness() - colorTextLightness))
-            colorbase = colorHighlightBg;
-        else
-            colorbase = colorHighlightFg;
-        singleColor = colorbase;
-    }
-    // Determine text color
-    textColor = QColor(QApplication::palette().color(QPalette::WindowText));
+    // Set up dark theme palette
+    QPalette darkPalette;
+    darkPalette.setColor(QPalette::Window, THEME_NAVY_BLUE);
+    darkPalette.setColor(QPalette::WindowText, THEME_TEXT);
+    darkPalette.setColor(QPalette::Base, THEME_NAVY_BLUE.darker(120));
+    darkPalette.setColor(QPalette::AlternateBase, THEME_NAVY_BLUE);
+    darkPalette.setColor(QPalette::ToolTipBase, THEME_GOLD);
+    darkPalette.setColor(QPalette::ToolTipText, THEME_NAVY_BLUE);
+    darkPalette.setColor(QPalette::Text, THEME_TEXT);
+    darkPalette.setColor(QPalette::Button, THEME_NAVY_BLUE);
+    darkPalette.setColor(QPalette::ButtonText, THEME_TEXT);
+    darkPalette.setColor(QPalette::BrightText, THEME_GOLD);
+    darkPalette.setColor(QPalette::Link, THEME_GOLD);
+    darkPalette.setColor(QPalette::Highlight, THEME_GOLD);
+    darkPalette.setColor(QPalette::HighlightedText, THEME_NAVY_BLUE);
+    
+    QApplication::setPalette(darkPalette);
+    QApplication::setStyle(QStyleFactory::create("Fusion")); // Use Fusion style for better dark theme support
 }
 
 QImage PlatformStyle::SingleColorImage(const QString& filename) const
@@ -144,4 +148,3 @@ const PlatformStyle *PlatformStyle::instantiate(const QString &platformId)
     }
     return 0;
 }
-

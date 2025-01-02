@@ -1,5 +1,5 @@
 *.tar.gz
-
+src/qt-ori
 *.exe
 src/junkcoin
 src/junkcoind
@@ -130,3 +130,7 @@ stage/
 *.ipr
 src/junkcoin-cli
 src/junkcoin-cli
+
+depends-build
+
+.codegpt
