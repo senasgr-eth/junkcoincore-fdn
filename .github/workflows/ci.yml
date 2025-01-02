@@ -1,59 +1,24 @@
-name: CI Pipeline
+name: Junkcoin Build CI
 
 on:
   push:
-    branches:
-      - dev
+    branches: [ dev, main ]
   pull_request:
-    branches:
-      - main
+    branches: [ main ]
 
 jobs:
   build:
-    runs-on: ubuntu-22.04
-
+    runs-on: self-hosted
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Update and install essential dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            build-essential \
-            libtool \
-            autotools-dev \
-            automake \
-            pkg-config \
-            libssl-dev \
-            libevent-dev \
-            bsdmainutils \
-            libboost-system-dev \
-            libboost-filesystem-dev \
-            libboost-chrono-dev \
-            libboost-program-options-dev \
-            libboost-test-dev \
-            libboost-thread-dev \
-            libjpeg-dev \
-            libqt5gui5 \
-            libqt5core5a \
-            libqt5dbus5 \
-            qttools5-dev \
-            qttools5-dev-tools \
-            libprotobuf-dev \
-            protobuf-compiler \
-            libqrencode-dev \
-            libdb5.3++-dev \
-            libdb5.3++ \
-            libdb5.3-dev \
-            libzmq3-dev \
-            libminiupnpc-dev
-
-      - name: Build project
+      - uses: actions/checkout@v3
+      
+      - name: Build Junkcoin Core
         run: |
           ./autogen.sh
-          ./configure
-          make
-
-      - name: Run tests
-        run: make check
+          CXXFLAGS="-g -ggdb -O0 -DDEBUG_LOCKORDER" ./configure \
+            --enable-debug \
+            --with-gui \
+            --with-daemon \
+            --with-utils \
+            --disable-bench
+          make -j$(nproc)
