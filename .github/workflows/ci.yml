@@ -15,10 +15,5 @@ jobs:
       - name: Build Junkcoin Core
         run: |
           ./autogen.sh
-          CXXFLAGS="-g -ggdb -O0 -DDEBUG_LOCKORDER" ./configure \
-            --enable-debug \
-            --with-gui \
-            --with-daemon \
-            --with-utils \
-            --disable-bench
+          ./configure --without-gui
           make -j$(nproc)
