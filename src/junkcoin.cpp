@@ -102,7 +102,7 @@ bool CheckAuxPowProofOfWork(const CBlockHeader& block, const Consensus::Params& 
     return CheckProofOfWork(block.auxpow->getParentBlockPoWHash(), block.nBits, params);
 }
 
-CAmount GetJunkcoinBlockSubsidy(int nHeight, int nFees, const Consensus::Params& consensusParams, uint256 prevHash) {
+CAmount GetJunkcoinBlockSubsidy(int nHeight, CAmount nFees, const Consensus::Params& consensusParams, uint256 prevHash) {
     CAmount nSubsidy;
 
     // Calculate base subsidy based on network type and height
