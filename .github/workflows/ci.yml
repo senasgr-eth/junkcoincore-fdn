@@ -1,31 +1,24 @@
-name: CI Pipeline
+name: Junkcoin Build CI
 
 on:
   push:
-    branches:
-      - dev
+    branches: [ dev, main ]
   pull_request:
-    branches:
-      - main
+    branches: [ main ]
 
 jobs:
   build:
-    runs-on: ubuntu-22.04
-
+    runs-on: self-hosted
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Update and install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y build-essential libboost-all-dev
-
-      - name: Build project
+      - uses: actions/checkout@v3
+      
+      - name: Build Junkcoin Core
         run: |
           ./autogen.sh
-          ./configure
-          make
-
-      - name: Run tests
-        run: make check
+          CXXFLAGS="-g -ggdb -O0 -DDEBUG_LOCKORDER" ./configure \
+            --enable-debug \
+            --with-gui \
+            --with-daemon \
+            --with-utils \
+            --disable-bench
+          make -j$(nproc)
