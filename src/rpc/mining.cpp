@@ -1374,7 +1374,7 @@ UniValue getblocksubsidy(const JSONRPCRequest& request)
     CAmount nReward = GetJunkcoinBlockSubsidy(nHeight, 0, Params().GetConsensus(nHeight), uint256());
     CAmount nCommunityFee = 0;
     if ((nHeight >= Params().GetCommunityFeeStartHeight()) && (nHeight <= Params().GetLastCommunityFeeBlockHeight())) {
-        nCommunityFee = nReward / 5; // 20% community fee
+        nCommunityFee = nReward * 0.2; // 20% community fee
         nReward -= nCommunityFee;
     }
 

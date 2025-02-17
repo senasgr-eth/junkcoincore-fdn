@@ -5,7 +5,7 @@
 set -e
 set -x
 
-BUILD_PATH="/tmp/zcbuild"
+BUILD_PATH="/tmp/jkcbuild"
 PACKAGE_NAME="junkcoin"
 SRC_PATH=`pwd`
 SRC_DEB=$SRC_PATH/contrib/debian

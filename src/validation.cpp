@@ -3202,7 +3202,7 @@ bool ContextualCheckBlock(const CBlock& block, CValidationState& state, const CB
         bool found = false;
         for (const CTxOut& output : block.vtx[0]->vout) {
             if (output.scriptPubKey == chainParams.GetCommunityFeeScriptAtHeight(nHeight)) {
-                if (output.nValue == (GetJunkcoinBlockSubsidy(nHeight, 0, consensusParams, block.hashPrevBlock) * 0.05)) {
+                if (output.nValue == (GetJunkcoinBlockSubsidy(nHeight, 0, consensusParams, block.hashPrevBlock) * 0.2)) {
                     found = true;
                     break;
                 }

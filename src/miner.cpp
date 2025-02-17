@@ -194,7 +194,7 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const CScript& sc
         coinbaseTx.vout.push_back(CTxOut(nCommunityFee, chainparams.GetCommunityFeeScriptAtHeight(nHeight))); // Tambahkan Community Fee output
     }
 
-    coinbaseTx.vout[0].nValue += nFees; // Tambahkan fee ke coinbase reward
+    //coinbaseTx.vout[0].nValue += nFees; // Tambahkan fee ke coinbase reward
     pblock->vtx[0] = MakeTransactionRef(std::move(coinbaseTx));
     pblocktemplate->vchCoinbaseCommitment = GenerateCoinbaseCommitment(*pblock, pindexPrev, consensus);
     pblocktemplate->vTxFees[0] = -nFees;
