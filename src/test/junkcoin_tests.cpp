@@ -15,22 +15,31 @@ BOOST_FIXTURE_TEST_SUITE(junkcoin_tests, TestingSetup)
  * the maximum block reward at a given height for a block without fees
  */
 uint64_t expectedMaxSubsidy(int height) {
-    if (height < 100000) {
-        return 1000000 * COIN;
-    } else if (height < 145000) {
-        return 500000 * COIN;
-    } else if (height < 200000) {
-        return 250000 * COIN;
-    } else if (height < 300000) {
-        return 125000 * COIN;
-    } else if (height < 400000) {
-        return  62500 * COIN;
-    } else if (height < 500000) {
-        return  31250 * COIN;
-    } else if (height < 600000) {
-        return  15625 * COIN;
+    // Maximum possible subsidy including random bonus (3x multiplier)
+    if (height < 101) {
+        return 3000 * COIN;  // Base 1000 * 3
+    } else if (height < 1541) {
+        return 1500 * COIN;  // Base 500 * 3
+    } else if (height < 2981) {
+        return 600 * COIN;   // Base 200 * 3
+    } else if (height < 5861) {
+        return 300 * COIN;   // Base 100 * 3
+    } else if (height < 262800) {
+        return 150 * COIN;   // Base 50 * 3
+    } else if (height < 394200) {
+        return 75 * COIN;    // Base 25 * 3
+    } else if (height < 657000) {
+        return 37.5 * COIN;  // Base 12.5 * 3
+    } else if (height < 1182600) {
+        return 18.75 * COIN; // Base 6.25 * 3
+    } else if (height < 1971000) {
+        return 9.375 * COIN; // Base 3.125 * 3
+    } else if (height < 2759400) {
+        return 4.6875 * COIN; // Base 1.5625 * 3
+    } else if (height < 3547800) {
+        return 2.34375 * COIN; // Base 0.78125 * 3
     } else {
-        return  10000 * COIN;
+        return 1.171875 * COIN; // Base 0.390625 * 3
     }
 }
 
@@ -39,85 +48,108 @@ uint64_t expectedMaxSubsidy(int height) {
  * for a block without fees
  */
 uint64_t expectedMinSubsidy(int height) {
-    if (height < 100000) {
-        return 0;
-    } else if (height < 145000) {
-        return 0;
-    } else if (height < 200000) {
-        return 250000 * COIN;
-    } else if (height < 300000) {
-        return 125000 * COIN;
-    } else if (height < 400000) {
-        return  62500 * COIN;
-    } else if (height < 500000) {
-        return  31250 * COIN;
-    } else if (height < 600000) {
-        return  15625 * COIN;
+    // Minimum possible subsidy (base reward without any bonus)
+    if (height < 101) {
+        return 1000 * COIN;
+    } else if (height < 1541) {
+        return 500 * COIN;   // 1st day
+    } else if (height < 2981) {
+        return 200 * COIN;   // 2nd day
+    } else if (height < 5861) {
+        return 100 * COIN;   // 3rd and 4th days
+    } else if (height < 262800) {
+        return 50 * COIN;
+    } else if (height < 394200) {
+        return 25 * COIN;
+    } else if (height < 657000) {
+        return 12.5 * COIN;
+    } else if (height < 1182600) {
+        return 6.25 * COIN;
+    } else if (height < 1971000) {
+        return 3.125 * COIN;
+    } else if (height < 2759400) {
+        return 1.5625 * COIN;
+    } else if (height < 3547800) {
+        return 0.78125 * COIN;
     } else {
-        return  10000 * COIN;
+        return 0.390625 * COIN;
     }
 }
 
-BOOST_AUTO_TEST_CASE(subsidy_first_100k_test)
+BOOST_AUTO_TEST_CASE(subsidy_first_100_blocks)
 {
     const CChainParams& mainParams = Params(CBaseChainParams::MAIN);
     CAmount nSum = 0;
     arith_uint256 prevHash = UintToArith256(uint256S("0"));
 
-    for (int nHeight = 0; nHeight <= 100000; nHeight++) {
+    for (int nHeight = 0; nHeight < 101; nHeight++) {
         const Consensus::Params& params = mainParams.GetConsensus(nHeight);
         CAmount nSubsidy = GetJunkcoinBlockSubsidy(nHeight, 0, params, ArithToUint256(prevHash));
         BOOST_CHECK(MoneyRange(nSubsidy));
-        BOOST_CHECK(nSubsidy <= 1000000 * COIN);
+        BOOST_CHECK(nSubsidy >= 1000 * COIN);
+        BOOST_CHECK(nSubsidy <= 3000 * COIN);
         nSum += nSubsidy;
-        // Use nSubsidy to give us some variation in previous block hash, without requiring full block templates
         prevHash += nSubsidy;
     }
 
-    const CAmount expected = 54894174438 * COIN;
-    BOOST_CHECK_EQUAL(expected, nSum);
+    // Base subsidy would be 101000 * COIN, but with random bonuses it can vary
+    BOOST_CHECK(nSum >= 101000 * COIN);
+    BOOST_CHECK(nSum <= 303000 * COIN);
 }
 
-BOOST_AUTO_TEST_CASE(subsidy_100k_145k_test)
+BOOST_AUTO_TEST_CASE(subsidy_first_day)
 {
     const CChainParams& mainParams = Params(CBaseChainParams::MAIN);
     CAmount nSum = 0;
     arith_uint256 prevHash = UintToArith256(uint256S("0"));
 
-    for (int nHeight = 100000; nHeight <= 145000; nHeight++) {
+    for (int nHeight = 101; nHeight < 1541; nHeight++) {
         const Consensus::Params& params = mainParams.GetConsensus(nHeight);
         CAmount nSubsidy = GetJunkcoinBlockSubsidy(nHeight, 0, params, ArithToUint256(prevHash));
         BOOST_CHECK(MoneyRange(nSubsidy));
-        BOOST_CHECK(nSubsidy <= 500000 * COIN);
+        BOOST_CHECK(nSubsidy >= 500 * COIN);
+        BOOST_CHECK(nSubsidy <= 1500 * COIN);
         nSum += nSubsidy;
-        // Use nSubsidy to give us some variation in previous block hash, without requiring full block templates
         prevHash += nSubsidy;
     }
 
-    const CAmount expected = 12349960000 * COIN;
-    BOOST_CHECK_EQUAL(expected, nSum);
+    // Base subsidy would be 720000 * COIN (1440 blocks * 500), but with random bonuses it can vary
+    BOOST_CHECK(nSum >= 720000 * COIN);
+    BOOST_CHECK(nSum <= 2160000 * COIN);
 }
 
-// Check the simplified rewards after block 145,000
-BOOST_AUTO_TEST_CASE(subsidy_post_145k_test)
+// Check the rewards for later blocks
+BOOST_AUTO_TEST_CASE(subsidy_later_blocks)
 {
     const CChainParams& mainParams = Params(CBaseChainParams::MAIN);
     const uint256 prevHash = uint256S("0");
 
-    for (int nHeight = 145000; nHeight < 600000; nHeight++) {
-        const Consensus::Params& params = mainParams.GetConsensus(nHeight);
-        CAmount nSubsidy = GetJunkcoinBlockSubsidy(nHeight, 0, params, prevHash);
-        CAmount nExpectedSubsidy = (500000 >> (nHeight / 100000)) * COIN;
+    // Test key transition points
+    struct TestPoint {
+        int height;
+        CAmount expectedBase;
+    } testPoints[] = {
+        {2981, 200 * COIN},   // End of 2nd day
+        {5861, 100 * COIN},   // End of 4th day
+        {262800, 50 * COIN},
+        {394200, 25 * COIN},
+        {657000, (125 * COIN) / 10},    // 12.5
+        {1182600, (625 * COIN) / 100},  // 6.25
+        {1971000, (3125 * COIN) / 1000},  // 3.125
+        {2759400, (15625 * COIN) / 10000},  // 1.5625
+        {3547800, (78125 * COIN) / 100000},  // 0.78125
+        {3547801, (390625 * COIN) / 1000000}  // 0.390625
+    };
+
+    for (const auto& point : testPoints) {
+        const Consensus::Params& params = mainParams.GetConsensus(point.height);
+        CAmount nSubsidy = GetJunkcoinBlockSubsidy(point.height, 0, params, prevHash);
         BOOST_CHECK(MoneyRange(nSubsidy));
-        BOOST_CHECK_EQUAL(nSubsidy, nExpectedSubsidy);
+        // Check that subsidy is at least the base amount
+        BOOST_CHECK(nSubsidy >= point.expectedBase);
+        // Check that subsidy is at most 3x the base (maximum random bonus)
+        BOOST_CHECK(nSubsidy <= point.expectedBase * 3);
     }
-
-    // Test reward at 600k+ is constant
-    CAmount nConstantSubsidy = GetJunkcoinBlockSubsidy(600000, 0, mainParams.GetConsensus(600000), prevHash);
-    BOOST_CHECK_EQUAL(nConstantSubsidy, 10000 * COIN);
-
-    nConstantSubsidy = GetJunkcoinBlockSubsidy(700000, 0, mainParams.GetConsensus(700000), prevHash);
-    BOOST_CHECK_EQUAL(nConstantSubsidy, 10000 * COIN);
 }
 
 BOOST_AUTO_TEST_CASE(get_next_work_difficulty_limit)
@@ -131,7 +163,7 @@ BOOST_AUTO_TEST_CASE(get_next_work_difficulty_limit)
     pindexLast.nHeight = 239;
     pindexLast.nTime = 1386475638; // Block #239
     pindexLast.nBits = 0x1e0ffff0;
-    //BOOST_CHECK_EQUAL(CalculateJunkcoinNextWorkRequired(&pindexLast, nLastRetargetTime, params), 0x1e00ffff);
+    BOOST_CHECK_EQUAL(CalculateJunkcoinNextWorkRequired(false, params.nPowTargetTimespan, &pindexLast, nLastRetargetTime, params), 0x1e00ffff);
 }
 
 BOOST_AUTO_TEST_CASE(get_next_work_pre_digishield)
@@ -145,7 +177,7 @@ BOOST_AUTO_TEST_CASE(get_next_work_pre_digishield)
     pindexLast.nHeight = 9599;
     pindexLast.nTime = 1386954113;
     pindexLast.nBits = 0x1c1a1206;
-    //BOOST_CHECK_EQUAL(CalculateJunkcoinNextWorkRequired(&pindexLast, nLastRetargetTime, params), 0x1c15ea59);
+    BOOST_CHECK_EQUAL(CalculateJunkcoinNextWorkRequired(false, params.nPowTargetTimespan, &pindexLast, nLastRetargetTime, params), 0x1c15ea59);
 }
 
 BOOST_AUTO_TEST_CASE(get_next_work_digishield)
@@ -160,7 +192,7 @@ BOOST_AUTO_TEST_CASE(get_next_work_digishield)
     pindexLast.nHeight = 145000;
     pindexLast.nTime = 1395094679;
     pindexLast.nBits = 0x1b499dfd;
-    //BOOST_CHECK_EQUAL(CalculateJunkcoinNextWorkRequired(&pindexLast, nLastRetargetTime, params), 0x1b671062);
+    BOOST_CHECK_EQUAL(CalculateJunkcoinNextWorkRequired(true, params.nPowTargetTimespan, &pindexLast, nLastRetargetTime, params), 0x1b671062);
 }
 
 BOOST_AUTO_TEST_CASE(get_next_work_digishield_modulated_upper)

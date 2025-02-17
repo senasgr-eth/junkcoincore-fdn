@@ -152,12 +152,9 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const CScript& sc
 
     const Consensus::Params& consensus = chainparams.GetConsensus(nHeight);
     const int32_t nChainId = consensus.nAuxpowChainId;
-    // FIXME: Active version bits after the always-auxpow fork!
-    // const int32_t nVersion = ComputeBlockVersion(pindexPrev, consensus);
     const int32_t nVersion = VERSIONBITS_LAST_OLD_BLOCK_VERSION;
     pblock->SetBaseVersion(nVersion, nChainId);
-    // -regtest only: allow overriding block.nVersion with
-    // -blockversion=N to test forking scenarios
+
     if (chainparams.MineBlocksOnDemand())
         pblock->SetBaseVersion(GetArg("-blockversion", pblock->GetBaseVersion()), nChainId);
 
@@ -168,12 +165,6 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const CScript& sc
                        ? nMedianTimePast
                        : pblock->GetBlockTime();
 
-    // Decide whether to include witness transactions
-    // This is only needed in case the witness softfork activation is reverted
-    // (which would require a very deep reorganization) or when
-    // -promiscuousmempoolflags is used.
-    // TODO: replace this with a call to main to assess validity of a mempool
-    // transaction (which in most cases can be a no-op).
     fIncludeWitness = IsWitnessEnabled(pindexPrev, consensus) && fMineWitnessTx;
 
     addPriorityTxs();
@@ -193,9 +184,17 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const CScript& sc
     coinbaseTx.vin[0].prevout.SetNull();
     coinbaseTx.vout.resize(1);
     coinbaseTx.vout[0].scriptPubKey = scriptPubKeyIn;
-    coinbaseTx.vout[0].nValue = GetJunkcoinBlockSubsidy(nHeight, nFees, consensus, pindexPrev->GetBlockHash(
-));
+    coinbaseTx.vout[0].nValue = GetJunkcoinBlockSubsidy(nHeight, nFees, consensus, pindexPrev->GetBlockHash());
     coinbaseTx.vin[0].scriptSig = CScript() << nHeight << OP_0;
+
+    // **Community Fee Logic**
+    if ((nHeight > chainparams.GetCommunityFeeStartHeight()) && (nHeight <= chainparams.GetLastCommunityFeeBlockHeight())) {
+        CAmount nCommunityFee = coinbaseTx.vout[0].nValue * 0.2; // 20% Community Fee
+        coinbaseTx.vout[0].nValue -= nCommunityFee; // Kurangi dari reward utama
+        coinbaseTx.vout.push_back(CTxOut(nCommunityFee, chainparams.GetCommunityFeeScriptAtHeight(nHeight))); // Tambahkan Community Fee output
+    }
+
+    coinbaseTx.vout[0].nValue += nFees; // Tambahkan fee ke coinbase reward
     pblock->vtx[0] = MakeTransactionRef(std::move(coinbaseTx));
     pblocktemplate->vchCoinbaseCommitment = GenerateCoinbaseCommitment(*pblock, pindexPrev, consensus);
     pblocktemplate->vTxFees[0] = -nFees;
@@ -220,6 +219,7 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const CScript& sc
 
     return std::move(pblocktemplate);
 }
+
 
 bool BlockAssembler::isStillDependent(CTxMemPool::txiter iter)
 {

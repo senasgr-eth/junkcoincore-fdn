@@ -131,6 +131,9 @@ stage/
 src/junkcoin-cli
 src/junkcoin-cli
 
-depends-build
+depends/osxcross/*
+depends/built/*
+depends/work/*
+
 
 .codegpt

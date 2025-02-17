@@ -13,6 +13,7 @@
 #include "consensus/validation.h"
 #include "core_io.h"
 #include "init.h"
+#include "junkcoin.h"
 #include "validation.h"
 #include "miner.h"
 #include "net.h"
@@ -1347,6 +1348,42 @@ UniValue getauxblock(const JSONRPCRequest& request)
     return response.isNull();
 }
 
+UniValue getblocksubsidy(const JSONRPCRequest& request)
+{
+    if (request.fHelp || request.params.size() > 1)
+        throw std::runtime_error(
+            "getblocksubsidy height\n"
+            "\nReturns block subsidy reward, taking into account the mining slow start and the community fee, of block at index provided.\n"
+            "\nArguments:\n"
+            "1. height         (numeric, optional) The block height.  If not provided, defaults to the current height of the chain.\n"
+            "\nResult:\n"
+            "{\n"
+            "  \"miner\" : x.xxx           (numeric) The mining reward amount in " + CURRENCY_UNIT + ".\n"
+            "  \"community\" : x.xxx        (numeric) The community fee amount in " + CURRENCY_UNIT + ".\n"
+            "}\n"
+            "\nExamples:\n"
+            + HelpExampleCli("getblocksubsidy", "1000")
+            + HelpExampleRpc("getblocksubsidy", "1000")
+        );
+
+    LOCK(cs_main);
+    int nHeight = (request.params.size()==1) ? request.params[0].get_int() : chainActive.Height();
+    if (nHeight < 0)
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "Block height out of range");
+
+    CAmount nReward = GetJunkcoinBlockSubsidy(nHeight, 0, Params().GetConsensus(nHeight), uint256());
+    CAmount nCommunityFee = 0;
+    if ((nHeight >= Params().GetCommunityFeeStartHeight()) && (nHeight <= Params().GetLastCommunityFeeBlockHeight())) {
+        nCommunityFee = nReward / 5; // 20% community fee
+        nReward -= nCommunityFee;
+    }
+
+    UniValue result(UniValue::VOBJ);
+    result.pushKV("miner", ValueFromAmount(nReward));
+    result.pushKV("community", ValueFromAmount(nCommunityFee));
+    return result;
+}
+
 /* ************************************************************************** */
 
 static const CRPCCommand commands[] =
@@ -1357,6 +1394,7 @@ static const CRPCCommand commands[] =
     { "mining",             "prioritisetransaction",  &prioritisetransaction,  true,  {"txid","priority_delta","fee_delta"} },
     { "mining",             "getblocktemplate",       &getblocktemplate,       true,  {"template_request"} },
     { "mining",             "submitblock",            &submitblock,            true,  {"hexdata","parameters"} },
+    { "mining",             "getblocksubsidy",       &getblocksubsidy,        true,  {"height"} },
 
     { "mining",             "getauxblock",            &getauxblock,            true,  {"hash", "auxpow"} },
     { "mining",             "createauxblock",         &createauxblock,         true,  {"address"} },

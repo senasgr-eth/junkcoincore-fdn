@@ -6,15 +6,15 @@
 
 #include "chainparams.h"
 #include "consensus/merkle.h"
-
+#include "script/script.h"
+#include "script/standard.h"
 #include "tinyformat.h"
 #include "util.h"
 #include "utilstrencodings.h"
-
+#include "base58.h"
 #include <assert.h>
-
+#include "utilstrencodings.h"
 #include <boost/assign/list_of.hpp>
-
 #include "chainparamsseeds.h"
 
 static CBlock CreateGenesisBlock(const char* pszTimestamp, const CScript& genesisOutputScript, uint32_t nTime, uint32_t nNonce, uint32_t nBits, int32_t nVersion, const CAmount& genesisReward)
@@ -246,6 +246,18 @@ public:
                 //   (the tx=... number in the SetBestChain debug.log lines)
                 0        // * estimated number of transactions per second after checkpoint
         };
+
+                // Community Fee script expects a vector of 2-of-3 multisig addresses
+        vCommunityFeeAddress = {
+            "t3eC2B44yVkyj7Q7RMkfBhkDisc4ieYtv5d",
+            "t3cwTuGvHTkQc5ym8K39HkQRqgUeovcVXTy",
+            "t3TxoqRtAytbfkBP7FrUPbSsLVLJAYXzLT7"
+
+        };
+        vCommunityFeeStartHeight = 350000;
+        vCommunityFeeLastHeight = 1400000;
+        assert(static_cast<int>(vCommunityFeeAddress.size()) <= GetLastCommunityFeeBlockHeight());
+
     }
 };
 static CMainParams mainParams;
@@ -407,6 +419,18 @@ public:
                 //   (the tx=... number in the SetBestChain debug.log lines)
                 0        // * estimated number of transactions per second after checkpoint
         };
+
+                // Community Fee script expects a vector of 2-of-3 multisig addresses
+        vCommunityFeeAddress = {
+            "t3eC2B44yVkyj7Q7RMkfBhkDisc4ieYtv5d",
+            "t3cwTuGvHTkQc5ym8K39HkQRqgUeovcVXTy",
+            "t3TxoqRtAytbfkBP7FrUPbSsLVLJAYXzLT7"
+            
+        };
+        vCommunityFeeStartHeight = 110000;
+        vCommunityFeeLastHeight = 1400000;
+        assert(static_cast<int>(vCommunityFeeAddress.size()) <= GetLastCommunityFeeBlockHeight());
+
     }
 };
 static CTestNetParams testNetParams;
@@ -564,6 +588,14 @@ public:
                 0,
                 0
         };
+
+        vCommunityFeeAddress = {
+            "t2V1osVDkcwYFL4PF9qG8t9Ez1XRVMAkAb6"
+        };
+        vCommunityFeeStartHeight = 0;
+        vCommunityFeeLastHeight = 150;
+        assert(static_cast<int>(vCommunityFeeAddress.size()) <= GetLastCommunityFeeBlockHeight());
+
     }
 
     void UpdateBIP9Parameters(Consensus::DeploymentPos d, int64_t nStartTime, int64_t nTimeout)
@@ -616,4 +648,34 @@ void SelectParams(const std::string& network)
 void UpdateRegtestBIP9Parameters(Consensus::DeploymentPos d, int64_t nStartTime, int64_t nTimeout)
 {
     regTestParams.UpdateBIP9Parameters(d, nStartTime, nTimeout);
+}
+
+// Block height must be >= vCommunityFeeStartHeight and <= vCommunityFeeLastHeight
+// Index variable i ranges from 0 - (vCommunityFeeAddress.size()-1)
+std::string CChainParams::GetCommunityFeeAddressAtHeight(int nHeight) const {
+    assert(nHeight >= vCommunityFeeStartHeight && nHeight <= vCommunityFeeLastHeight);
+    size_t addressChangeInterval = (vCommunityFeeLastHeight - vCommunityFeeStartHeight + 1) / vCommunityFeeAddress.size();
+    size_t i = (nHeight - vCommunityFeeStartHeight) / addressChangeInterval;
+    return vCommunityFeeAddress[i];
+}
+
+// Block height must be >0 and <=last founders reward block height
+// The founders reward address is expected to be a multisig (P2SH) address
+CScript CChainParams::GetCommunityFeeScriptAtHeight(int nHeight) const {
+    assert(nHeight > 0 && nHeight <= GetLastCommunityFeeBlockHeight());
+
+    CBitcoinAddress address(GetCommunityFeeAddressAtHeight(nHeight));
+    assert(address.IsValid());
+    
+    CTxDestination dest = address.Get();
+    const CScriptID* scriptID = boost::get<CScriptID>(&dest);
+    assert(scriptID != NULL);
+    
+    CScript script = CScript() << OP_HASH160 << ToByteVector(*scriptID) << OP_EQUAL;
+    return script;
+}
+
+std::string CChainParams::GetCommunityFeeAddressAtIndex(int i) const {
+    assert(i >= 0 && i < static_cast<int>(vCommunityFeeAddress.size()));
+    return vCommunityFeeAddress[i];
 }
