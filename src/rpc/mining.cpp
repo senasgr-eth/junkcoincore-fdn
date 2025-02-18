@@ -1372,15 +1372,15 @@ UniValue getblocksubsidy(const JSONRPCRequest& request)
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Block height out of range");
 
     CAmount nReward = GetJunkcoinBlockSubsidy(nHeight, 0, Params().GetConsensus(nHeight), uint256());
-    CAmount nCommunityFee = 0;
-    if ((nHeight >= Params().GetCommunityFeeStartHeight()) && (nHeight <= Params().GetLastCommunityFeeBlockHeight())) {
-        nCommunityFee = nReward * 0.2; // 20% community fee
-        nReward -= nCommunityFee;
+    CAmount nDevelopmentFund = 0;
+    if ((nHeight >= Params().GetDevelopmentFundStartHeight()) && (nHeight <= Params().GetLastDevelopmentFundBlockHeight())) {
+        nDevelopmentFund = nReward * 0.2; // 20% development fund
+        nReward -= nDevelopmentFund;
     }
 
     UniValue result(UniValue::VOBJ);
     result.pushKV("miner", ValueFromAmount(nReward));
-    result.pushKV("community", ValueFromAmount(nCommunityFee));
+    result.pushKV("development", ValueFromAmount(nDevelopmentFund));
     return result;
 }
 

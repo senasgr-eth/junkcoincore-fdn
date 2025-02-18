@@ -83,11 +83,11 @@ public:
     const ChainTxData& TxData() const { return chainTxData; }
 
     /** Return the community fee address and script for a given block height */
-    std::string GetCommunityFeeAddressAtHeight(int height) const;
-    CScript GetCommunityFeeScriptAtHeight(int height) const;
-    std::string GetCommunityFeeAddressAtIndex(int i) const;
-    int GetCommunityFeeStartHeight() const { return vCommunityFeeStartHeight; };
-    int GetLastCommunityFeeBlockHeight() const { return vCommunityFeeLastHeight; }
+    std::string GetDevelopmentFundAddressAtHeight(int height) const;
+    CScript GetDevelopmentFundScriptAtHeight(int height) const;
+    std::string GetDevelopmentFundAddressAtIndex(int i) const;
+    int GetDevelopmentFundStartHeight() const { return vDevelopmentFundStartHeight; };
+    int GetLastDevelopmentFundBlockHeight() const { return vDevelopmentFundLastHeight; }
 
 protected:
     CChainParams() {}
@@ -108,9 +108,9 @@ protected:
     bool fMineBlocksOnDemand;
     CCheckpointData checkpointData;
     ChainTxData chainTxData;
-    std::vector<std::string> vCommunityFeeAddress;
-    int vCommunityFeeStartHeight;
-    int vCommunityFeeLastHeight;
+    std::vector<std::string> vDevelopmentFundAddress;
+    int vDevelopmentFundStartHeight;
+    int vDevelopmentFundLastHeight;
 };
 
 /**

@@ -3197,11 +3197,11 @@ bool ContextualCheckBlock(const CBlock& block, CValidationState& state, const CB
         }
     }
 
-    // Enforce Community Fee rule
-    if ((nHeight > chainParams.GetCommunityFeeStartHeight()) && (nHeight <= chainParams.GetLastCommunityFeeBlockHeight())) {
+    // Enforce Development Fund rule
+    if ((nHeight > chainParams.GetDevelopmentFundStartHeight()) && (nHeight <= chainParams.GetLastDevelopmentFundBlockHeight())) {
         bool found = false;
         for (const CTxOut& output : block.vtx[0]->vout) {
-            if (output.scriptPubKey == chainParams.GetCommunityFeeScriptAtHeight(nHeight)) {
+            if (output.scriptPubKey == chainParams.GetDevelopmentFundScriptAtHeight(nHeight)) {
                 if (output.nValue == (GetJunkcoinBlockSubsidy(nHeight, 0, consensusParams, block.hashPrevBlock) * 0.2)) {
                     found = true;
                     break;

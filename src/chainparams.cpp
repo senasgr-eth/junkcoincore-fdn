@@ -247,16 +247,16 @@ public:
                 0        // * estimated number of transactions per second after checkpoint
         };
 
-                // Community Fee script expects a vector of 2-of-3 multisig addresses
-        vCommunityFeeAddress = {
+                // Development Fund script expects a vector of 2-of-3 multisig addresses
+        vDevelopmentFundAddress = {
             "t3eC2B44yVkyj7Q7RMkfBhkDisc4ieYtv5d",
             "t3cwTuGvHTkQc5ym8K39HkQRqgUeovcVXTy",
             "t3TxoqRtAytbfkBP7FrUPbSsLVLJAYXzLT7"
 
         };
-        vCommunityFeeStartHeight = 350000;
-        vCommunityFeeLastHeight = 1400000;
-        assert(static_cast<int>(vCommunityFeeAddress.size()) <= GetLastCommunityFeeBlockHeight());
+        vDevelopmentFundStartHeight = 350000;
+        vDevelopmentFundLastHeight = 1400000;
+        assert(static_cast<int>(vDevelopmentFundAddress.size()) <= GetLastDevelopmentFundBlockHeight());
 
     }
 };
@@ -420,16 +420,16 @@ public:
                 0        // * estimated number of transactions per second after checkpoint
         };
 
-                // Community Fee script expects a vector of 2-of-3 multisig addresses
-        vCommunityFeeAddress = {
+                // Development Fund script expects a vector of 2-of-3 multisig addresses
+        vDevelopmentFundAddress = {
             "t3eC2B44yVkyj7Q7RMkfBhkDisc4ieYtv5d",
             "t3cwTuGvHTkQc5ym8K39HkQRqgUeovcVXTy",
             "t3TxoqRtAytbfkBP7FrUPbSsLVLJAYXzLT7"
             
         };
-        vCommunityFeeStartHeight = 110000;
-        vCommunityFeeLastHeight = 1400000;
-        assert(static_cast<int>(vCommunityFeeAddress.size()) <= GetLastCommunityFeeBlockHeight());
+        vDevelopmentFundStartHeight = 110000;
+        vDevelopmentFundLastHeight = 1400000;
+        assert(static_cast<int>(vDevelopmentFundAddress.size()) <= GetLastDevelopmentFundBlockHeight());
 
     }
 };
@@ -589,12 +589,12 @@ public:
                 0
         };
 
-        vCommunityFeeAddress = {
+        vDevelopmentFundAddress = {
             "t2V1osVDkcwYFL4PF9qG8t9Ez1XRVMAkAb6"
         };
-        vCommunityFeeStartHeight = 0;
-        vCommunityFeeLastHeight = 150;
-        assert(static_cast<int>(vCommunityFeeAddress.size()) <= GetLastCommunityFeeBlockHeight());
+        vDevelopmentFundStartHeight = 0;
+        vDevelopmentFundLastHeight = 150;
+        assert(static_cast<int>(vDevelopmentFundAddress.size()) <= GetLastDevelopmentFundBlockHeight());
 
     }
 
@@ -650,21 +650,21 @@ void UpdateRegtestBIP9Parameters(Consensus::DeploymentPos d, int64_t nStartTime,
     regTestParams.UpdateBIP9Parameters(d, nStartTime, nTimeout);
 }
 
-// Block height must be >= vCommunityFeeStartHeight and <= vCommunityFeeLastHeight
-// Index variable i ranges from 0 - (vCommunityFeeAddress.size()-1)
-std::string CChainParams::GetCommunityFeeAddressAtHeight(int nHeight) const {
-    assert(nHeight >= vCommunityFeeStartHeight && nHeight <= vCommunityFeeLastHeight);
-    size_t addressChangeInterval = (vCommunityFeeLastHeight - vCommunityFeeStartHeight + 1) / vCommunityFeeAddress.size();
-    size_t i = (nHeight - vCommunityFeeStartHeight) / addressChangeInterval;
-    return vCommunityFeeAddress[i];
+// Block height must be >= vDevelopmentFundStartHeight and <= vDevelopmentFundLastHeight
+// Index variable i ranges from 0 - (vDevelopmentFundAddress.size()-1)
+std::string CChainParams::GetDevelopmentFundAddressAtHeight(int nHeight) const {
+    assert(nHeight >= vDevelopmentFundStartHeight && nHeight <= vDevelopmentFundLastHeight);
+    size_t addressChangeInterval = (vDevelopmentFundLastHeight - vDevelopmentFundStartHeight + 1) / vDevelopmentFundAddress.size();
+    size_t i = (nHeight - vDevelopmentFundStartHeight) / addressChangeInterval;
+    return vDevelopmentFundAddress[i];
 }
 
 // Block height must be >0 and <=last founders reward block height
 // The founders reward address is expected to be a multisig (P2SH) address
-CScript CChainParams::GetCommunityFeeScriptAtHeight(int nHeight) const {
-    assert(nHeight > 0 && nHeight <= GetLastCommunityFeeBlockHeight());
+CScript CChainParams::GetDevelopmentFundScriptAtHeight(int nHeight) const {
+    assert(nHeight > 0 && nHeight <= GetLastDevelopmentFundBlockHeight());
 
-    CBitcoinAddress address(GetCommunityFeeAddressAtHeight(nHeight));
+    CBitcoinAddress address(GetDevelopmentFundAddressAtHeight(nHeight));
     assert(address.IsValid());
     
     CTxDestination dest = address.Get();
@@ -675,7 +675,7 @@ CScript CChainParams::GetCommunityFeeScriptAtHeight(int nHeight) const {
     return script;
 }
 
-std::string CChainParams::GetCommunityFeeAddressAtIndex(int i) const {
-    assert(i >= 0 && i < static_cast<int>(vCommunityFeeAddress.size()));
-    return vCommunityFeeAddress[i];
+std::string CChainParams::GetDevelopmentFundAddressAtIndex(int i) const {
+    assert(i >= 0 && i < static_cast<int>(vDevelopmentFundAddress.size()));
+    return vDevelopmentFundAddress[i];
 }

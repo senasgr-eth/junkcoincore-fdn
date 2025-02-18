@@ -187,11 +187,11 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const CScript& sc
     coinbaseTx.vout[0].nValue = GetJunkcoinBlockSubsidy(nHeight, nFees, consensus, pindexPrev->GetBlockHash());
     coinbaseTx.vin[0].scriptSig = CScript() << nHeight << OP_0;
 
-    // **Community Fee Logic**
-    if ((nHeight > chainparams.GetCommunityFeeStartHeight()) && (nHeight <= chainparams.GetLastCommunityFeeBlockHeight())) {
-        CAmount nCommunityFee = coinbaseTx.vout[0].nValue * 0.2; // 20% Community Fee
-        coinbaseTx.vout[0].nValue -= nCommunityFee; // Kurangi dari reward utama
-        coinbaseTx.vout.push_back(CTxOut(nCommunityFee, chainparams.GetCommunityFeeScriptAtHeight(nHeight))); // Tambahkan Community Fee output
+    // **Development Fund Logic**
+    if ((nHeight > chainparams.GetDevelopmentFundStartHeight()) && (nHeight <= chainparams.GetLastDevelopmentFundBlockHeight())) {
+        CAmount nDevelopmentFund = coinbaseTx.vout[0].nValue * 0.2; // 20% Development Fund
+        coinbaseTx.vout[0].nValue -= nDevelopmentFund; // Kurangi dari reward utama
+        coinbaseTx.vout.push_back(CTxOut(nDevelopmentFund, chainparams.GetDevelopmentFundScriptAtHeight(nHeight))); // Tambahkan Development Fund output
     }
 
     //coinbaseTx.vout[0].nValue += nFees; // Tambahkan fee ke coinbase reward
