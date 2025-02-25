@@ -88,6 +88,7 @@ public:
     std::string GetDevelopmentFundAddressAtIndex(int i) const;
     int GetDevelopmentFundStartHeight() const { return vDevelopmentFundStartHeight; };
     int GetLastDevelopmentFundBlockHeight() const { return vDevelopmentFundLastHeight; }
+    double GetDevelopmentFundPercent() const { return vDevelopmentFundPercent; }
 
 protected:
     CChainParams() {}
@@ -111,6 +112,7 @@ protected:
     std::vector<std::string> vDevelopmentFundAddress;
     int vDevelopmentFundStartHeight;
     int vDevelopmentFundLastHeight;
+    double vDevelopmentFundPercent;
 };
 
 /**

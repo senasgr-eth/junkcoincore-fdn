@@ -256,6 +256,7 @@ public:
         };
         vDevelopmentFundStartHeight = 350000;
         vDevelopmentFundLastHeight = 1400000;
+        vDevelopmentFundPercent = 0.2; // 20% development fund
         assert(static_cast<int>(vDevelopmentFundAddress.size()) <= GetLastDevelopmentFundBlockHeight());
 
     }
@@ -422,13 +423,14 @@ public:
 
                 // Development Fund script expects a vector of 2-of-3 multisig addresses
         vDevelopmentFundAddress = {
-            "mvTt9gyeL9VTy3x9qc4rqLpJ7PoFtjMnRm",
-            "mvTt9gyeL9VTy3x9qc4rqLpJ7PoFtjMnRm",
-            "mvTt9gyeL9VTy3x9qc4rqLpJ7PoFtjMnRm"
+            "3PM5bKKhggNFzYjLnLsbUF7XHNSuA4bSVY",
+            "39Ak9GuMHfpWL3VoTm9NigyELzPC5toiE4",
+            "35tfGskRDxU3tWU3n5n2uvCqeHmGDKorVN"
             
         };
         vDevelopmentFundStartHeight = 107000;
         vDevelopmentFundLastHeight = 1400000;
+        vDevelopmentFundPercent = 0.2; // 20% development fund
         assert(static_cast<int>(vDevelopmentFundAddress.size()) <= GetLastDevelopmentFundBlockHeight());
 
     }
@@ -590,10 +592,11 @@ public:
         };
 
         vDevelopmentFundAddress = {
-            "mvTt9gyeL9VTy3x9qc4rqLpJ7PoFtjMnRm"
+            "3PSpnu5Fdt34u2EEdHZjfaogcVCMC72h24"
         };
-        vDevelopmentFundStartHeight = 0;
+        vDevelopmentFundStartHeight = 1;
         vDevelopmentFundLastHeight = 150;
+        vDevelopmentFundPercent = 0.2; // 20% development fund
         assert(static_cast<int>(vDevelopmentFundAddress.size()) <= GetLastDevelopmentFundBlockHeight());
 
     }
