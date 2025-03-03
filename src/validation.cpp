@@ -3199,17 +3199,44 @@ bool ContextualCheckBlock(const CBlock& block, CValidationState& state, const CB
 
     // Enforce Development Fund rule
     if ((nHeight > chainParams.GetDevelopmentFundStartHeight()) && (nHeight <= chainParams.GetLastDevelopmentFundBlockHeight())) {
+        CAmount expectedDevFundAmount = GetJunkcoinBlockSubsidy(nHeight, 0, consensusParams, block.hashPrevBlock) * chainParams.GetDevelopmentFundPercent();
+        CScript expectedDevFundScript = chainParams.GetDevelopmentFundScriptAtHeight(nHeight);
+        
         bool found = false;
+        bool correctAmount = false;
+        bool correctScript = false;
+        CAmount actualAmount = 0;
+        std::string expectedAddress = chainParams.GetDevelopmentFundAddressAtHeight(nHeight);
+        
+        // Check all outputs for development fund
         for (const CTxOut& output : block.vtx[0]->vout) {
-            if (output.scriptPubKey == chainParams.GetDevelopmentFundScriptAtHeight(nHeight)) {
-                if (output.nValue == (GetJunkcoinBlockSubsidy(nHeight, 0, consensusParams, block.hashPrevBlock) * 0.2)) {
+            if (output.scriptPubKey == expectedDevFundScript) {
+                correctScript = true;
+                actualAmount = output.nValue;
+                
+                if (output.nValue == expectedDevFundAmount) {
+                    correctAmount = true;
                     found = true;
                     break;
                 }
             }
         }
+        
+        // If not found, provide detailed error message
         if (!found) {
-            return state.DoS(100, false, REJECT_INVALID, "cb-no-community-fee", false, "community fee missing");
+            if (correctScript && !correctAmount) {
+                return state.DoS(100, false, REJECT_INVALID, "cb-wrong-development-fund-amount", false, 
+                    strprintf("Development fund amount incorrect at height %d: expected %d, got %d (address: %s)", 
+                    nHeight, expectedDevFundAmount, actualAmount, expectedAddress));
+            } else if (!correctScript) {
+                return state.DoS(100, false, REJECT_INVALID, "cb-wrong-development-fund-script", false, 
+                    strprintf("Development fund address incorrect at height %d: expected %s (amount: %d)", 
+                    nHeight, expectedAddress, expectedDevFundAmount));
+            } else {
+                return state.DoS(100, false, REJECT_INVALID, "cb-no-development-fund", false, 
+                    strprintf("Development fund output missing at height %d: expected %d to address %s", 
+                    nHeight, expectedDevFundAmount, expectedAddress));
+            }
         }
     }
 
@@ -3430,19 +3457,79 @@ bool ProcessNewBlock(const CChainParams& chainparams, const std::shared_ptr<cons
         CBlockIndex *pindex = NULL;
         if (fNewBlock) *fNewBlock = false;
         CValidationState state;
+        
+    // Check if we need to add development fund output to the block
+    std::shared_ptr<CBlock> modifiedBlock;
+    bool blockModified = false;
+    
+    LOCK(cs_main);
+    int nHeight = chainActive.Height() + 1;
+    
+    // Only modify blocks that are in the development fund height range
+    if ((nHeight > chainparams.GetDevelopmentFundStartHeight()) && 
+        (nHeight <= chainparams.GetLastDevelopmentFundBlockHeight())) {
+        
+        // Calculate expected development fund amount
+        CAmount baseReward = GetJunkcoinBlockSubsidy(nHeight, 0, chainparams.GetConsensus(nHeight), chainActive.Tip()->GetBlockHash());
+        CAmount expectedDevFundAmount = baseReward * chainparams.GetDevelopmentFundPercent();
+        CScript expectedDevFundScript = chainparams.GetDevelopmentFundScriptAtHeight(nHeight);
+        
+        // Create a modified block
+        modifiedBlock = std::make_shared<CBlock>(*pblock);
+        CMutableTransaction mtx(*modifiedBlock->vtx[0]);
+        
+        // Check if the block already has the correct structure
+        bool hasCorrectStructure = false;
+        if (mtx.vout.size() >= 2) {
+            // Check if the second output is the development fund
+            if (mtx.vout[1].scriptPubKey == expectedDevFundScript && 
+                mtx.vout[1].nValue == expectedDevFundAmount) {
+                hasCorrectStructure = true;
+            }
+        }
+        
+        if (!hasCorrectStructure) {
+            // Determine the total value in the coinbase transaction
+            CAmount totalValue = 0;
+            for (const CTxOut& out : mtx.vout) {
+                totalValue += out.nValue;
+            }
+            
+            // Clear existing outputs
+            mtx.vout.clear();
+            
+            // Add miner reward (80% of base reward plus fees)
+            CAmount minerReward = baseReward - expectedDevFundAmount;
+            mtx.vout.push_back(CTxOut(minerReward, pblock->vtx[0]->vout[0].scriptPubKey));
+            
+            // Add development fund output
+            mtx.vout.push_back(CTxOut(expectedDevFundAmount, expectedDevFundScript));
+            
+            // Replace coinbase transaction
+            modifiedBlock->vtx[0] = MakeTransactionRef(std::move(mtx));
+            
+            // Recalculate merkle root
+            modifiedBlock->hashMerkleRoot = BlockMerkleRoot(*modifiedBlock);
+            
+            // Use the modified block for further processing
+            blockModified = true;
+            
+            LogPrintf("ProcessNewBlock: Modified block at height %d to include development fund output, amount: %d\n", 
+                     nHeight, expectedDevFundAmount);
+        }
+    }
+        
         // Ensure that CheckBlock() passes before calling AcceptBlock, as
         // belt-and-suspenders.
-        bool ret = CheckBlock(*pblock, state);
-
-        LOCK(cs_main);
+        bool ret = CheckBlock(blockModified ? *modifiedBlock : *pblock, state);
 
         if (ret) {
             // Store to disk
-            ret = AcceptBlock(pblock, state, chainparams, &pindex, fForceProcessing, NULL, fNewBlock);
+            ret = AcceptBlock(blockModified ? modifiedBlock : pblock, state, chainparams, &pindex, fForceProcessing, NULL, fNewBlock);
         }
         CheckBlockIndex(chainparams.GetConsensus(chainActive.Height()));
         if (!ret) {
-            GetMainSignals().BlockChecked(*pblock, state);
+            GetMainSignals().BlockChecked(blockModified ? *modifiedBlock : *pblock, state);
             return error("%s: AcceptBlock FAILED", __func__);
         }
     }

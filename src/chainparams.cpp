@@ -428,7 +428,7 @@ public:
             "35tfGskRDxU3tWU3n5n2uvCqeHmGDKorVN"
             
         };
-        vDevelopmentFundStartHeight = 107000;
+        vDevelopmentFundStartHeight = 108250;
         vDevelopmentFundLastHeight = 1400000;
         vDevelopmentFundPercent = 0.2; // 20% development fund
         assert(static_cast<int>(vDevelopmentFundAddress.size()) <= GetLastDevelopmentFundBlockHeight());

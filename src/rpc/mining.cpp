@@ -603,8 +603,8 @@ UniValue getblocktemplate(const JSONRPCRequest& request)
     // NOTE: If at some point we support pre-segwit miners post-segwit-activation, this needs to take segwit support into consideration
     const bool fPreSegWit = (THRESHOLD_ACTIVE != VersionBitsState(pindexPrev, consensusParams, Consensus::DEPLOYMENT_SEGWIT, versionbitscache));
 
-    UniValue aCaps(UniValue::VARR); aCaps.push_back("proposal");
-
+    UniValue aCaps(UniValue::VARR); aCaps.push_back("proposal");  
+ 
     UniValue transactions(UniValue::VARR);
     map<uint256, int64_t> setTxIndex;
     int i = 0;
@@ -639,7 +639,7 @@ UniValue getblocktemplate(const JSONRPCRequest& request)
         }
         entry.pushKV("sigops", nTxSigOps);
         entry.pushKV("weight", GetTransactionWeight(tx));
-
+ 
         transactions.push_back(entry);
     }
 
@@ -716,7 +716,7 @@ UniValue getblocktemplate(const JSONRPCRequest& request)
     result.pushKV("previousblockhash", pblock->hashPrevBlock.GetHex());
     result.pushKV("transactions", transactions);
     result.pushKV("coinbaseaux", aux);
-    result.pushKV("coinbasevalue", (int64_t)pblock->vtx[0]->vout[0].nValue);
+     result.pushKV("coinbasevalue", (int64_t)pblock->vtx[0]->vout[0].nValue);
     result.pushKV("longpollid", chainActive.Tip()->GetBlockHash().GetHex() + i64tostr(nTransactionsUpdatedLast));
     result.pushKV("target", hashTarget.GetHex());
     result.pushKV("mintime", (int64_t)pindexPrev->GetMedianTimePast()+1);
@@ -1374,7 +1374,7 @@ UniValue getblocksubsidy(const JSONRPCRequest& request)
     CAmount nReward = GetJunkcoinBlockSubsidy(nHeight, 0, Params().GetConsensus(nHeight), uint256());
     CAmount nDevelopmentFund = 0;
     if ((nHeight >= Params().GetDevelopmentFundStartHeight()) && (nHeight <= Params().GetLastDevelopmentFundBlockHeight())) {
-        nDevelopmentFund = nReward * 0.2; // 20% development fund
+        nDevelopmentFund = nReward * Params().GetDevelopmentFundPercent();
         nReward -= nDevelopmentFund;
     }
 

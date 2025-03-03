@@ -155,6 +155,8 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const CScript& sc
     const int32_t nVersion = VERSIONBITS_LAST_OLD_BLOCK_VERSION;
     pblock->SetBaseVersion(nVersion, nChainId);
 
+    // -regtest only: allow overriding block.nVersion with
+    // -blockversion=N to test forking scenarios
     if (chainparams.MineBlocksOnDemand())
         pblock->SetBaseVersion(GetArg("-blockversion", pblock->GetBaseVersion()), nChainId);
 
@@ -191,20 +193,40 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const CScript& sc
     coinbaseTx.vin[0].scriptSig = CScript() << nHeight << OP_0;
 
     // **Development Fund Logic**
-    if ((nHeight > chainparams.GetDevelopmentFundStartHeight()) && (nHeight <= chainparams.GetLastDevelopmentFundBlockHeight())) {
-        CAmount nDevelopmentFund = baseReward * 0.2; // 20% dari base reward
-        coinbaseTx.vout[0].nValue -= nDevelopmentFund; // Kurangi dari reward utama
-        coinbaseTx.vout.push_back(CTxOut(nDevelopmentFund, chainparams.GetDevelopmentFundScriptAtHeight(nHeight))); // Tambahkan output untuk Development Fund
+    CAmount nDevelopmentFund = 0;
+    if ((nHeight > Params().GetDevelopmentFundStartHeight()) && (nHeight <= Params().GetLastDevelopmentFundBlockHeight())) {
+        // Community Fee is 20% of the block subsidy
+        nDevelopmentFund = baseReward * Params().GetDevelopmentFundPercent();
+        // Prevent taking more than the base reward
+        if (nDevelopmentFund >= baseReward) {
+            nDevelopmentFund = baseReward * 0.2; // Force 20% as a fallback
+            LogPrintf("WARNING: Development fund capped at 20%% of base reward\n");
+        }
+        // Take some reward away from miner
+        coinbaseTx.vout[0].nValue -= nDevelopmentFund;
+        // And give it to the Development Fund
+        coinbaseTx.vout.push_back(CTxOut(nDevelopmentFund, Params().GetDevelopmentFundScriptAtHeight(nHeight)));
     }
 
     // **Tambahkan Fees ke Miner Setelah Development Fund Dikurangi**
     coinbaseTx.vout[0].nValue += nFees; // Fees tetap diberikan ke miner
+
+    // Ensure miner gets something
+    if (coinbaseTx.vout[0].nValue <= 0) {
+        LogPrintf("ERROR: Miner reward would be %d, adjusting...\n", coinbaseTx.vout[0].nValue);
+        coinbaseTx.vout[0].nValue = nFees; // At least give fees
+        if (coinbaseTx.vout.size() > 1) {
+            coinbaseTx.vout[1].nValue = 0; // Disable dev fund if no reward available
+        }
+    }
+
+    // Debug logging
+    LogPrintf("Height: %d, Base reward: %d, Dev fund: %d, Fees: %d, Miner reward: %d\n",
+            nHeight, baseReward, nDevelopmentFund, nFees, coinbaseTx.vout[0].nValue);
+
     pblock->vtx[0] = MakeTransactionRef(std::move(coinbaseTx));
     pblocktemplate->vchCoinbaseCommitment = GenerateCoinbaseCommitment(*pblock, pindexPrev, consensus);
     pblocktemplate->vTxFees[0] = -nFees;
-
-    uint64_t nSerializeSize = GetSerializeSize(*pblock, SER_NETWORK, PROTOCOL_VERSION);
-    LogPrintf("CreateNewBlock(): total size: %u block weight: %u txs: %u fees: %ld sigops %d\n", nSerializeSize, GetBlockWeight(*pblock), nBlockTx, nFees, nBlockSigOpsCost);
 
     // Fill in header
     pblock->hashPrevBlock  = pindexPrev->GetBlockHash();

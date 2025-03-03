@@ -1,8 +1,8 @@
 package=native_cctools
-$(package)_version=807d6fd1be5d2224872e381870c0a75387fe05e6
-$(package)_download_path=https://github.com/theuni/cctools-port/archive
+$(package)_version=55562e4073dea0fbfd0b20e0bf69ffe6390c7f97
+$(package)_download_path=https://github.com/tpoechtrager/cctools-port/archive
 $(package)_file_name=$($(package)_version).tar.gz
-$(package)_sha256_hash=a09c9ba4684670a0375e42d9d67e7f12c1f62581a27f28f7c825d6d7032ccc6a
+$(package)_sha256_hash=e51995a843533a3dac155dd0c71362dd471597a2d23f13dff194c6285362f875
 $(package)_build_subdir=cctools
 $(package)_clang_version=3.7.1
 $(package)_clang_download_path=http://llvm.org/releases/$($(package)_clang_version)
