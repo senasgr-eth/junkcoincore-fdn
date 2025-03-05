@@ -37,6 +37,7 @@
 #include "utilstrencodings.h"
 #include "validationinterface.h"
 #include "versionbits.h"
+#include "junkcoin.h"
 #include "warnings.h"
 
 #include <atomic>
@@ -3201,6 +3202,22 @@ bool ContextualCheckBlock(const CBlock& block, CValidationState& state, const CB
         if (block.vtx[0]->vin[0].scriptSig.size() < expect.size() ||
             !std::equal(expect.begin(), expect.end(), block.vtx[0]->vin[0].scriptSig.begin())) {
             return state.DoS(100, false, REJECT_INVALID, "bad-cb-height", false, "block height mismatch in coinbase");
+        }
+    }
+
+    // Enforce Development Fund rule
+    if ((nHeight > chainParams.GetDevelopmentFundStartHeight()) && (nHeight <= chainParams.GetLastDevelopmentFundBlockHeight())) {
+        bool found = false;
+        for (const CTxOut& output : block.vtx[0]->vout) {
+            if (output.scriptPubKey == chainParams.GetDevelopmentFundScriptAtHeight(nHeight)) {
+                if (output.nValue == (GetJunkcoinBlockSubsidy(nHeight, 0, consensusParams, block.hashPrevBlock) * 0.2)) {
+                    found = true;
+                    break;
+                }
+            }
+        }
+        if (!found) {
+            return state.DoS(100, false, REJECT_INVALID, "cb-no-community-fee", false, "community fee missing");
         }
     }
 

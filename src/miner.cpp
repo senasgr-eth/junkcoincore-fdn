@@ -193,9 +193,21 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const CScript& sc
     coinbaseTx.vin[0].prevout.SetNull();
     coinbaseTx.vout.resize(1);
     coinbaseTx.vout[0].scriptPubKey = scriptPubKeyIn;
-    coinbaseTx.vout[0].nValue = GetJunkcoinBlockSubsidy(nHeight, nFees, consensus, pindexPrev->GetBlockHash(
-));
+
+    // **Gunakan base reward tanpa fees**
+    CAmount baseReward = GetJunkcoinBlockSubsidy(nHeight, 0, consensus, pindexPrev->GetBlockHash());
+    coinbaseTx.vout[0].nValue = baseReward;
     coinbaseTx.vin[0].scriptSig = CScript() << nHeight << OP_0;
+
+    // **Development Fund Logic**
+    if ((nHeight > chainparams.GetDevelopmentFundStartHeight()) && (nHeight <= chainparams.GetLastDevelopmentFundBlockHeight())) {
+        CAmount nDevelopmentFund = baseReward * chainparams.GetDevelopmentFundPercent(); // 20% dari base reward
+        coinbaseTx.vout[0].nValue -= nDevelopmentFund; // Kurangi dari reward utama
+        coinbaseTx.vout.push_back(CTxOut(nDevelopmentFund, chainparams.GetDevelopmentFundScriptAtHeight(nHeight))); // Tambahkan output untuk Development Fund
+    }
+
+    // **Tambahkan Fees ke Miner Setelah Development Fund Dikurangi**
+    coinbaseTx.vout[0].nValue += nFees; // Fees tetap diberikan ke miner
     pblock->vtx[0] = MakeTransactionRef(std::move(coinbaseTx));
     pblocktemplate->vchCoinbaseCommitment = GenerateCoinbaseCommitment(*pblock, pindexPrev, consensus);
     pblocktemplate->vTxFees[0] = -nFees;
