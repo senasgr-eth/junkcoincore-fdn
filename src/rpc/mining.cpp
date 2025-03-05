@@ -597,9 +597,26 @@ UniValue getblocktemplate(const JSONRPCRequest& request)
         nStart = GetTime();
         fLastTemplateSupportsSegwit = fSupportsSegwit;
 
-        // Create new block
-        CScript scriptDummy = CScript() << OP_TRUE;
-        pblocktemplate = BlockAssembler(Params()).CreateNewBlock(scriptDummy, fMineWitnessTx);
+        // Create new block with proper coinbase script
+        CScript scriptPubKey;
+        std::string strMinerAddress = GetArg("-mineraddress", "");
+        if (!strMinerAddress.empty()) {
+            CBitcoinAddress addr(strMinerAddress);
+            scriptPubKey = GetScriptForDestination(addr.Get());
+        } else {
+#ifdef ENABLE_WALLET
+            if (!pwalletMain)
+                throw JSONRPCError(RPC_METHOD_NOT_FOUND, "Wallet disabled and -mineraddress not set");
+            // Get new key from wallet
+            CPubKey pubkey;
+            if (!pwalletMain->GetKeyFromPool(pubkey))
+                throw JSONRPCError(RPC_WALLET_KEYPOOL_RAN_OUT, "Error: Keypool ran out");
+            scriptPubKey = GetScriptForDestination(pubkey.GetID());
+#else
+            throw JSONRPCError(RPC_METHOD_NOT_FOUND, "junkcoin compiled without wallet and -mineraddress not set");
+#endif
+        }
+        pblocktemplate = BlockAssembler(Params()).CreateNewBlock(scriptPubKey, fMineWitnessTx);
         if (!pblocktemplate)
             throw JSONRPCError(RPC_OUT_OF_MEMORY, "Out of memory");
 

@@ -389,7 +389,7 @@ public:
 
         // nodes with support for servicebits filtering should be at the top
         vSeeds.push_back(CDNSSeedData("junk-coin.com", "testnet.junk-coin.com"));
-        vSeeds.push_back(CDNSSeedData("103.133.25.201", "103.133.25.201:19771")); // Port 19771
+        vSeeds.push_back(CDNSSeedData("s3na.xyz", "junk-seed.s3na.xyz")); // Port 19771
         vSeeds.push_back(CDNSSeedData("110.171.123.186", "110.171.123.186:19771")); // Port 19771
 
         base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1,111);  // Testnet addresses start with 'm' or 'n'
@@ -428,7 +428,7 @@ public:
             "35tfGskRDxU3tWU3n5n2uvCqeHmGDKorVN"
             
         };
-        vDevelopmentFundStartHeight = 107000;
+        vDevelopmentFundStartHeight = 90650;
         vDevelopmentFundLastHeight = 1400000;
         vDevelopmentFundPercent = 0.2; // 20% development fund
         assert(static_cast<int>(vDevelopmentFundAddress.size()) <= GetLastDevelopmentFundBlockHeight());
@@ -562,8 +562,8 @@ public:
         //assert(genesis.hashMerkleRoot == uint256S("0x6f80efd038566e1e3eab3e1d38131604d06481e77f2462235c6a9a94b1f8abf9"));
 
         // nodes with support for servicebits filtering should be at the top
-        //vSeeds.push_back(CDNSSeedData("belscan.io", "testnetseed.belscan.io", true));
-        //vSeeds.push_back(CDNSSeedData("belscan.io", "testnetseeder.belscan.io", true));
+        //vSeeds.push_back(CDNSSeedData("s3na.xyz", "junk-testnet.s3na.xyz", true));
+        //vSeeds.push_back(CDNSSeedData("junk-coin.com", "testnet.junk-coin.com./", true));
 
         base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1,47);  // Regtest specific
         base58Prefixes[SCRIPT_ADDRESS] = std::vector<unsigned char>(1,5);   // Script addresses
