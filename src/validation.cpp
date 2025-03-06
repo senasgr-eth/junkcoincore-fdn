@@ -1288,7 +1288,7 @@ void CheckForkWarningConditions()
     if (pindexBestForkTip || (pindexBestInvalid && pindexBestInvalid->nChainWork > chainActive.Tip()->nChainWork + (GetBlockProof(*chainActive.Tip()) * 30)))
     {
         //printf("pindexBestForkTip: %s\n", pindexBestForkTip ? pindexBestForkTip->GetBlockHash().ToString().c_str() : "NULL");
-        printf("Want pindexBestInvalid->nChainWork %s > chainActive.Tip()->nChainWork: %s\n", pindexBestInvalid->nChainWork.ToString(), (chainActive.Tip()->nChainWork + (GetBlockProof(*chainActive.Tip()) * 30)).ToString());
+        printf("Want pindexBestInvalid->nChainWork %s > chainActive.Tip()->nChainWork: %s\n", pindexBestInvalid->nChainWork.ToString().c_str(), (chainActive.Tip()->nChainWork + (GetBlockProof(*chainActive.Tip()) * 30)).ToString().c_str());
         if (!GetfLargeWorkForkFound() && pindexBestForkBase)
         {
             std::string warning = std::string("'Warning: Large-work fork detected, forking after block ") +
@@ -3207,19 +3207,22 @@ bool ContextualCheckBlock(const CBlock& block, CValidationState& state, const CB
         }
     }
 
-    // Enforce Development Fund rule
+    // Enforce Development Fund: 20% of base block reward (excluding fees)
     if ((nHeight > chainParams.GetDevelopmentFundStartHeight()) && (nHeight <= chainParams.GetLastDevelopmentFundBlockHeight())) {
         bool found = false;
+        CAmount baseReward = GetJunkcoinBlockSubsidy(nHeight, 0, consensusParams, block.hashPrevBlock);
+        CAmount expectedDevFund = baseReward * chainParams.GetDevelopmentFundPercent(); // 20% of base reward only
+        
         for (const CTxOut& output : block.vtx[0]->vout) {
             if (output.scriptPubKey == chainParams.GetDevelopmentFundScriptAtHeight(nHeight)) {
-                if (output.nValue == (GetJunkcoinBlockSubsidy(nHeight, 0, consensusParams, block.hashPrevBlock) * 0.2)) {
+                if (output.nValue == expectedDevFund) {
                     found = true;
                     break;
                 }
             }
         }
         if (!found) {
-            return state.DoS(100, false, REJECT_INVALID, "cb-no-community-fee", false, "community fee missing");
+            return state.DoS(100, false, REJECT_INVALID, "cb-no-development-fund", false, "development fund missing");
         }
     }
 

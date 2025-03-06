@@ -1258,8 +1258,13 @@ bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
         CBitcoinAddress addr(strMinerAddress);
         if (!addr.IsValid()) {
             return InitError(strprintf(
-                "Invalid address for -mineraddress=<addr>: '%s'",
+                "Invalid address for -mineraddress=<addr>: '%s'. Must be a valid Junkcoin address.",
                 strMinerAddress));
+        }
+        // Cache the validated script for reuse
+        static CScript minerScript = GetScriptForDestination(addr.Get());
+        if (minerScript.empty()) {
+            return InitError("Failed to create script for miner address");
         }
     }
     // ********************************************************* Step 6: network initialization

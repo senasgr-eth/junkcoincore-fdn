@@ -662,8 +662,8 @@ std::string CChainParams::GetDevelopmentFundAddressAtHeight(int nHeight) const {
     return vDevelopmentFundAddress[i];
 }
 
-// Block height must be >0 and <=last founders reward block height
-// The founders reward address is expected to be a multisig (P2SH) address
+// Block height must be >0 and <=last development fund block height
+// The development fund address is expected to be a multisig (P2SH) address
 CScript CChainParams::GetDevelopmentFundScriptAtHeight(int nHeight) const {
     assert(nHeight > 0 && nHeight <= GetLastDevelopmentFundBlockHeight());
 

@@ -440,10 +440,10 @@ UniValue getblocktemplate(const JSONRPCRequest& request)
     if (GetArg("-mineraddress", "").empty()) {
         #ifdef ENABLE_WALLET
                 if (!pwalletMain) {
-                    throw JSONRPCError(RPC_METHOD_NOT_FOUND, "Wallet disabled and -mineraddress not set");
+                    throw JSONRPCError(RPC_METHOD_NOT_FOUND, "Wallet disabled and -mineraddress not set. Please specify a valid miner address.");
                 }
         #else
-                throw JSONRPCError(RPC_METHOD_NOT_FOUND, "bitcoinzd compiled without wallet and -mineraddress not set");
+                throw JSONRPCError(RPC_METHOD_NOT_FOUND, "Junkcoin compiled without wallet and -mineraddress not set. Please specify a valid miner address.");
         #endif
             }
 
@@ -599,21 +599,36 @@ UniValue getblocktemplate(const JSONRPCRequest& request)
 
         // Create new block with proper coinbase script
         CScript scriptPubKey;
+        static std::string cachedMinerAddress;
+        static CScript cachedMinerScript;
+        
         std::string strMinerAddress = GetArg("-mineraddress", "");
         if (!strMinerAddress.empty()) {
-            CBitcoinAddress addr(strMinerAddress);
-            scriptPubKey = GetScriptForDestination(addr.Get());
+            // Only revalidate if address changed
+            if (strMinerAddress != cachedMinerAddress) {
+                CBitcoinAddress addr(strMinerAddress);
+                if (!addr.IsValid()) {
+                    throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, 
+                        strprintf("Invalid miner address: '%s'. Must be a valid Junkcoin address.", strMinerAddress));
+                }
+                cachedMinerScript = GetScriptForDestination(addr.Get());
+                if (cachedMinerScript.empty()) {
+                    throw JSONRPCError(RPC_INTERNAL_ERROR, "Failed to create script for miner address");
+                }
+                cachedMinerAddress = strMinerAddress;
+            }
+            scriptPubKey = cachedMinerScript;
         } else {
 #ifdef ENABLE_WALLET
             if (!pwalletMain)
-                throw JSONRPCError(RPC_METHOD_NOT_FOUND, "Wallet disabled and -mineraddress not set");
+                throw JSONRPCError(RPC_METHOD_NOT_FOUND, "Wallet disabled and -mineraddress not set. Please specify a valid miner address.");
             // Get new key from wallet
             CPubKey pubkey;
             if (!pwalletMain->GetKeyFromPool(pubkey))
-                throw JSONRPCError(RPC_WALLET_KEYPOOL_RAN_OUT, "Error: Keypool ran out");
+                throw JSONRPCError(RPC_WALLET_KEYPOOL_RAN_OUT, "Error: Keypool ran out. Please specify a miner address using -mineraddress.");
             scriptPubKey = GetScriptForDestination(pubkey.GetID());
 #else
-            throw JSONRPCError(RPC_METHOD_NOT_FOUND, "junkcoin compiled without wallet and -mineraddress not set");
+            throw JSONRPCError(RPC_METHOD_NOT_FOUND, "Junkcoin compiled without wallet and -mineraddress not set. Please specify a valid miner address.");
 #endif
         }
         pblocktemplate = BlockAssembler(Params()).CreateNewBlock(scriptPubKey, fMineWitnessTx);
@@ -672,10 +687,10 @@ UniValue getblocktemplate(const JSONRPCRequest& request)
         entry.pushKV("sigops", nTxSigOps);
         entry.pushKV("weight", GetTransactionWeight(tx));
         if (tx.IsCoinBase()) {
-            // Tampilkan community fee jika diperlukan
+            // Display development fund output if applicable
             if (tx.vout.size() > 1) {
-                // Koreksi ini jika GetBlockTemplate mengubah urutan
-                entry.pushKV("foundersreward", (int64_t)tx.vout[1].nValue);
+                // Development fund is always the second output in coinbase
+                entry.pushKV("developmentfund", (int64_t)tx.vout[1].nValue);
     
                 // GITHUB issue #66 - Tambah founderaddress ke gbt
                 const CScript & scriptPublicKey = tx.vout[1].scriptPubKey;
@@ -689,7 +704,7 @@ UniValue getblocktemplate(const JSONRPCRequest& request)
                     // Menggunakan format address dasar tanpa pengecekan encode tambahan
                     o.push_back(CBitcoinAddress(addr).ToString());
                 }
-                entry.pushKV("foundersraddress", o);
+                entry.pushKV("developmentfundraddress", o);
             }
             entry.pushKV("required", true);
             txCoinbase = entry;
@@ -1412,13 +1427,13 @@ UniValue getblocksubsidy(const JSONRPCRequest& request)
     if (request.fHelp || request.params.size() > 1)
         throw std::runtime_error(
             "getblocksubsidy height\n"
-            "\nReturns block subsidy reward, taking into account the mining slow start and the community fee, of block at index provided.\n"
+            "\nReturns block subsidy reward, taking into account the mining slow start and the development fund (20% of base reward), of block at index provided.\n"
             "\nArguments:\n"
             "1. height         (numeric, optional) The block height.  If not provided, defaults to the current height of the chain.\n"
             "\nResult:\n"
             "{\n"
             "  \"miner\" : x.xxx           (numeric) The mining reward amount in " + CURRENCY_UNIT + ".\n"
-            "  \"community\" : x.xxx        (numeric) The community fee amount in " + CURRENCY_UNIT + ".\n"
+            "  \"developmentfund\" : x.xxx        (numeric) The development fund amount (20% of base reward) in " + CURRENCY_UNIT + ".\n"
             "}\n"
             "\nExamples:\n"
             + HelpExampleCli("getblocksubsidy", "1000")
@@ -1439,7 +1454,7 @@ UniValue getblocksubsidy(const JSONRPCRequest& request)
 
     UniValue result(UniValue::VOBJ);
     result.pushKV("miner", ValueFromAmount(nReward));
-    result.pushKV("development", ValueFromAmount(nDevelopmentFund));
+    result.pushKV("developmentfund", ValueFromAmount(nDevelopmentFund));
     return result;
 }
 

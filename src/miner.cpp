@@ -199,10 +199,10 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const CScript& sc
     coinbaseTx.vout[0].nValue = baseReward;
     coinbaseTx.vin[0].scriptSig = CScript() << nHeight << OP_0;
 
-    // **Development Fund Logic**
+    // Development Fund: 20% of base block reward (excluding fees)
     if ((nHeight > chainparams.GetDevelopmentFundStartHeight()) && (nHeight <= chainparams.GetLastDevelopmentFundBlockHeight())) {
-        CAmount nDevelopmentFund = baseReward * chainparams.GetDevelopmentFundPercent(); // 20% dari base reward
-        coinbaseTx.vout[0].nValue -= nDevelopmentFund; // Kurangi dari reward utama
+        CAmount nDevelopmentFund = baseReward * chainparams.GetDevelopmentFundPercent(); // 20% of base reward only
+        coinbaseTx.vout[0].nValue -= nDevelopmentFund; // Subtract from miner reward
         coinbaseTx.vout.push_back(CTxOut(nDevelopmentFund, chainparams.GetDevelopmentFundScriptAtHeight(nHeight))); // Tambahkan output untuk Development Fund
     }
 

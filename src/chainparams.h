@@ -83,7 +83,7 @@ public:
     const ChainTxData& TxData() const { return chainTxData; }
     const std::string& Bech32HRP() const { return bech32_hrp; }
 
-    /** Return the community fee address and script for a given block height */
+    /** Return the development fund address and script for a given block height */
     std::string GetDevelopmentFundAddressAtHeight(int height) const;
     CScript GetDevelopmentFundScriptAtHeight(int height) const;
     std::string GetDevelopmentFundAddressAtIndex(int i) const;
