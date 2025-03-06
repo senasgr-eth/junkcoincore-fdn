@@ -81,6 +81,7 @@ public:
     const std::vector<SeedSpec6>& FixedSeeds() const { return vFixedSeeds; }
     const CCheckpointData& Checkpoints() const { return checkpointData; }
     const ChainTxData& TxData() const { return chainTxData; }
+    const std::string& Bech32HRP() const { return bech32_hrp; }
 
     /** Return the community fee address and script for a given block height */
     std::string GetDevelopmentFundAddressAtHeight(int height) const;
@@ -107,6 +108,7 @@ protected:
     bool fDefaultConsistencyChecks;
     bool fRequireStandard;
     bool fMineBlocksOnDemand;
+    std::string bech32_hrp;
     CCheckpointData checkpointData;
     ChainTxData chainTxData;
     std::vector<std::string> vDevelopmentFundAddress;

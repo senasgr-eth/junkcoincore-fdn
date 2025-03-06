@@ -1288,7 +1288,7 @@ void CheckForkWarningConditions()
     if (pindexBestForkTip || (pindexBestInvalid && pindexBestInvalid->nChainWork > chainActive.Tip()->nChainWork + (GetBlockProof(*chainActive.Tip()) * 30)))
     {
         //printf("pindexBestForkTip: %s\n", pindexBestForkTip ? pindexBestForkTip->GetBlockHash().ToString().c_str() : "NULL");
-        printf("Want pindexBestInvalid->nChainWork %d > chainActive.Tip()->nChainWork: %d\n", pindexBestInvalid->nChainWork, chainActive.Tip()->nChainWork + (GetBlockProof(*chainActive.Tip()) * 30));
+        printf("Want pindexBestInvalid->nChainWork %s > chainActive.Tip()->nChainWork: %s\n", pindexBestInvalid->nChainWork.ToString(), (chainActive.Tip()->nChainWork + (GetBlockProof(*chainActive.Tip()) * 30)).ToString());
         if (!GetfLargeWorkForkFound() && pindexBestForkBase)
         {
             std::string warning = std::string("'Warning: Large-work fork detected, forking after block ") +
@@ -1774,6 +1774,8 @@ public:
 
     int64_t BeginTime(const Consensus::Params& params) const { return 0; }
     int64_t EndTime(const Consensus::Params& params) const { return std::numeric_limits<int64_t>::max(); }
+    int32_t BeginHeight(const Consensus::Params& params) const { return 0; }
+    int32_t EndHeight(const Consensus::Params& params) const { return std::numeric_limits<int32_t>::max(); }
     int Period(const Consensus::Params& params) const { return params.nMinerConfirmationWindow; }
     int Threshold(const Consensus::Params& params) const { return params.nRuleChangeActivationThreshold; }
 

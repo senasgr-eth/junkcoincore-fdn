@@ -37,6 +37,8 @@ ThresholdState AbstractThresholdConditionChecker::GetStateFor(const CBlockIndex*
 {
     int nPeriod = Period(params);
     int nThreshold = Threshold(params);
+    int32_t nHeightStart = BeginHeight(params);
+    int32_t nHeightTimeout = EndHeight(params);
     int64_t nTimeStart = BeginTime(params);
     int64_t nTimeTimeout = EndTime(params);
 
@@ -53,8 +55,8 @@ ThresholdState AbstractThresholdConditionChecker::GetStateFor(const CBlockIndex*
             cache[pindexPrev] = THRESHOLD_DEFINED;
             break;
         }
-        if (pindexPrev->GetMedianTimePast() < nTimeStart) {
-            // Optimization: don't recompute down further, as we know every earlier block will be before the start time
+        if (pindexPrev->nHeight < nHeightStart && pindexPrev->GetMedianTimePast() < nTimeStart) {
+            // Optimization: don't recompute down further, as we know every earlier block will be before the start
             cache[pindexPrev] = THRESHOLD_DEFINED;
             break;
         }
@@ -74,9 +76,9 @@ ThresholdState AbstractThresholdConditionChecker::GetStateFor(const CBlockIndex*
 
         switch (state) {
             case THRESHOLD_DEFINED: {
-                if (pindexPrev->GetMedianTimePast() >= nTimeTimeout) {
+                if (pindexPrev->nHeight >= nHeightTimeout || pindexPrev->GetMedianTimePast() >= nTimeTimeout) {
                     stateNext = THRESHOLD_FAILED;
-                } else if (pindexPrev->GetMedianTimePast() >= nTimeStart) {
+                } else if (pindexPrev->nHeight >= nHeightStart || pindexPrev->GetMedianTimePast() >= nTimeStart) {
                     stateNext = THRESHOLD_STARTED;
                 }
                 break;
@@ -158,7 +160,9 @@ private:
 
 protected:
     int64_t BeginTime(const Consensus::Params& params) const { return params.vDeployments[id].nStartTime; }
-    int64_t EndTime(const Consensus::Params& params) const { return params.vDeployments[id].nTimeout; }
+    int64_t EndTime(const Consensus::Params& params) const { return params.vDeployments[id].nTimeTimeout; }
+    int32_t BeginHeight(const Consensus::Params& params) const { return params.vDeployments[id].nStartHeight; }
+    int32_t EndHeight(const Consensus::Params& params) const { return params.vDeployments[id].nTimeout; }
     int Period(const Consensus::Params& params) const { return params.nMinerConfirmationWindow; }
     int Threshold(const Consensus::Params& params) const { return params.nRuleChangeActivationThreshold; }
 
