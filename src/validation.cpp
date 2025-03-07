@@ -3207,8 +3207,12 @@ bool ContextualCheckBlock(const CBlock& block, CValidationState& state, const CB
         }
     }
 
-    // Enforce Development Fund: 20% of base block reward (excluding fees)
-    if ((nHeight > chainParams.GetDevelopmentFundStartHeight()) && (nHeight <= chainParams.GetLastDevelopmentFundBlockHeight())) {
+    // Check if block is within development fund range
+    bool isDevFundActive = (nHeight > chainParams.GetDevelopmentFundStartHeight()) && 
+                           (nHeight <= chainParams.GetLastDevelopmentFundBlockHeight());
+
+    // Enforce Development Fund: 20% of base block reward (excluding fees) - only active in specific block range
+    if (isDevFundActive) {
         bool found = false;
         CAmount baseReward = GetJunkcoinBlockSubsidy(nHeight, 0, consensusParams, block.hashPrevBlock);
         CAmount expectedDevFund = baseReward * chainParams.GetDevelopmentFundPercent(); // 20% of base reward only
@@ -3224,7 +3228,7 @@ bool ContextualCheckBlock(const CBlock& block, CValidationState& state, const CB
         if (!found) {
             return state.DoS(100, false, REJECT_INVALID, "cb-no-development-fund", false, "development fund missing");
         }
-    }
+    } // Outside this range, don't enforce development fund (pre-development fund behavior)
 
     // Validation for witness commitments.
     // * We compute the witness hash (which is the hash including witnesses) of all the block's transactions, except the

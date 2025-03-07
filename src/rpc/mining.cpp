@@ -436,16 +436,7 @@ UniValue getblocktemplate(const JSONRPCRequest& request)
 
     LOCK(cs_main);
 
-    // Wallet or miner address is required because we support coinbasetxn
-    if (GetArg("-mineraddress", "").empty()) {
-        #ifdef ENABLE_WALLET
-                if (!pwalletMain) {
-                    throw JSONRPCError(RPC_METHOD_NOT_FOUND, "Wallet disabled and -mineraddress not set. Please specify a valid miner address.");
-                }
-        #else
-                throw JSONRPCError(RPC_METHOD_NOT_FOUND, "Junkcoin compiled without wallet and -mineraddress not set. Please specify a valid miner address.");
-        #endif
-            }
+    // Note: Required -mineraddress check is handled later when creating the block template
 
     std::string strMode = "template";
     UniValue lpval = NullUniValue;
@@ -602,33 +593,56 @@ UniValue getblocktemplate(const JSONRPCRequest& request)
         static std::string cachedMinerAddress;
         static CScript cachedMinerScript;
         
-        std::string strMinerAddress = GetArg("-mineraddress", "");
-        if (!strMinerAddress.empty()) {
-            // Only revalidate if address changed
-            if (strMinerAddress != cachedMinerAddress) {
-                CBitcoinAddress addr(strMinerAddress);
-                if (!addr.IsValid()) {
-                    throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, 
-                        strprintf("Invalid miner address: '%s'. Must be a valid Junkcoin address.", strMinerAddress));
+        // Check if current block is within development fund active range
+        int nHeight = chainActive.Height() + 1;
+        bool isDevFundActive = (nHeight > Params().GetDevelopmentFundStartHeight()) && 
+                              (nHeight <= Params().GetLastDevelopmentFundBlockHeight());
+        
+        // Only use -mineraddress when development fund is active
+        if (isDevFundActive) {
+            std::string strMinerAddress = GetArg("-mineraddress", "");
+            if (!strMinerAddress.empty()) {
+                // Only revalidate if address changed
+                if (strMinerAddress != cachedMinerAddress) {
+                    CBitcoinAddress addr(strMinerAddress);
+                    if (!addr.IsValid()) {
+                        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, 
+                            strprintf("Invalid miner address: '%s'. Must be a valid Junkcoin address.", strMinerAddress));
+                    }
+                    cachedMinerScript = GetScriptForDestination(addr.Get());
+                    if (cachedMinerScript.empty()) {
+                        throw JSONRPCError(RPC_INTERNAL_ERROR, "Failed to create script for miner address");
+                    }
+                    cachedMinerAddress = strMinerAddress;
                 }
-                cachedMinerScript = GetScriptForDestination(addr.Get());
-                if (cachedMinerScript.empty()) {
-                    throw JSONRPCError(RPC_INTERNAL_ERROR, "Failed to create script for miner address");
-                }
-                cachedMinerAddress = strMinerAddress;
+                scriptPubKey = cachedMinerScript;
+            } else {
+                // Development fund active but no -mineraddress specified
+#ifdef ENABLE_WALLET
+                if (!pwalletMain)
+                    throw JSONRPCError(RPC_METHOD_NOT_FOUND, "Wallet disabled and -mineraddress not set. Please specify a valid miner address when development fund is active.");
+                // Get new key from wallet
+                CPubKey pubkey;
+                if (!pwalletMain->GetKeyFromPool(pubkey))
+                    throw JSONRPCError(RPC_WALLET_KEYPOOL_RAN_OUT, "Error: Keypool ran out. Please specify a miner address using -mineraddress.");
+                scriptPubKey = GetScriptForDestination(pubkey.GetID());
+#else
+                throw JSONRPCError(RPC_METHOD_NOT_FOUND, "Junkcoin compiled without wallet and -mineraddress not set. Please specify a valid miner address when development fund is active.");
+#endif
             }
-            scriptPubKey = cachedMinerScript;
         } else {
+            // Outside development fund block range - fallback to original behavior
+            // Ignore -mineraddress
 #ifdef ENABLE_WALLET
             if (!pwalletMain)
-                throw JSONRPCError(RPC_METHOD_NOT_FOUND, "Wallet disabled and -mineraddress not set. Please specify a valid miner address.");
+                throw JSONRPCError(RPC_METHOD_NOT_FOUND, "Wallet disabled and not in development fund block range.");
             // Get new key from wallet
             CPubKey pubkey;
             if (!pwalletMain->GetKeyFromPool(pubkey))
-                throw JSONRPCError(RPC_WALLET_KEYPOOL_RAN_OUT, "Error: Keypool ran out. Please specify a miner address using -mineraddress.");
+                throw JSONRPCError(RPC_WALLET_KEYPOOL_RAN_OUT, "Error: Keypool ran out.");
             scriptPubKey = GetScriptForDestination(pubkey.GetID());
 #else
-            throw JSONRPCError(RPC_METHOD_NOT_FOUND, "Junkcoin compiled without wallet and -mineraddress not set. Please specify a valid miner address.");
+            throw JSONRPCError(RPC_METHOD_NOT_FOUND, "Junkcoin compiled without wallet and not in development fund block range.");
 #endif
         }
         pblocktemplate = BlockAssembler(Params()).CreateNewBlock(scriptPubKey, fMineWitnessTx);
@@ -687,12 +701,17 @@ UniValue getblocktemplate(const JSONRPCRequest& request)
         entry.pushKV("sigops", nTxSigOps);
         entry.pushKV("weight", GetTransactionWeight(tx));
         if (tx.IsCoinBase()) {
-            // Display development fund output if applicable
-            if (tx.vout.size() > 1) {
+            // Get block height to check if we're in development fund active range
+            int nHeight = pindexPrev->nHeight + 1;
+            bool isDevFundActive = (nHeight > Params().GetDevelopmentFundStartHeight()) && 
+                                 (nHeight <= Params().GetLastDevelopmentFundBlockHeight());
+                                 
+            // Display development fund output if applicable and in active block range
+            if (isDevFundActive && tx.vout.size() > 1) {
                 // Development fund is always the second output in coinbase
                 entry.pushKV("developmentfund", (int64_t)tx.vout[1].nValue);
     
-                // GITHUB issue #66 - Tambah founderaddress ke gbt
+                // GITHUB issue #66 - Add founder address to gbt
                 const CScript & scriptPublicKey = tx.vout[1].scriptPubKey;
                 std::vector<CTxDestination> addresses;
                 txnouttype whichType;
@@ -701,11 +720,12 @@ UniValue getblocktemplate(const JSONRPCRequest& request)
                 ExtractDestinations(scriptPublicKey, whichType, addresses, nRequired);
                 UniValue o(UniValue::VARR);
                 for (const CTxDestination& addr : addresses) {
-                    // Menggunakan format address dasar tanpa pengecekan encode tambahan
+                    // Use basic address format without additional encode checking
                     o.push_back(CBitcoinAddress(addr).ToString());
                 }
                 entry.pushKV("developmentfundraddress", o);
             }
+            // If not in active block range, no development fund info is included in the template
             entry.pushKV("required", true);
             txCoinbase = entry;
         } else {

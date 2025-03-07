@@ -1261,6 +1261,9 @@ bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
                 "Invalid address for -mineraddress=<addr>: '%s'. Must be a valid Junkcoin address.",
                 strMinerAddress));
         }
+        // Add a warning that -mineraddress only applies within development fund block range
+        LogPrintf("Warning: -mineraddress is only effective for blocks within the development fund range (blocks %d to %d).\n", 
+                 Params().GetDevelopmentFundStartHeight() + 1, Params().GetLastDevelopmentFundBlockHeight());
         // Cache the validated script for reuse
         static CScript minerScript = GetScriptForDestination(addr.Get());
         if (minerScript.empty()) {
