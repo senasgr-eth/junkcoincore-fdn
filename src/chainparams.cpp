@@ -76,15 +76,17 @@ public:
     CMainParams() {
         strNetworkID = "main";
 
-        // Not used in JunkCoin
-        consensus.nSubsidyHalvingInterval = 100000;
+        // Not used in JunkCoin - Junkcoin uses fixed reward schedule by height instead of halvings
+        //consensus.nSubsidyHalvingInterval = 100000;
 
-        consensus.nMajorityEnforceBlockUpgrade = 1500;
-        consensus.nMajorityRejectBlockOutdated = 1900;
-        consensus.nMajorityWindow = 2000;
+        // These majority-based parameters are not used with height-based activation
+        //consensus.nMajorityEnforceBlockUpgrade = 1500;
+        //consensus.nMajorityRejectBlockOutdated = 1900;
+        //consensus.nMajorityWindow = 2000;
 
         // After deployments are activated we can change it
-        consensus.BIP34Hash = uint256S("0xa2effa738145e377e08a61d76179c21703e13e48910b30a2a87f0dfe794b64c6"); //genesis
+        // BIP34Hash is not used with height-based activation
+        //consensus.BIP34Hash = uint256S("0xa2effa738145e377e08a61d76179c21703e13e48910b30a2a87f0dfe794b64c6"); //genesis
         consensus.BIP65Height = 0x210c; //set
         consensus.BIP66Height = 0x210c;
 
@@ -156,17 +158,22 @@ public:
 
         //consensus.fAllowLegacyBlocks = true;
 
-        // We do not activate digishield in this consensus
+        // Digishield: Advanced difficulty adjustment algorithm
+        // Currently not activated in this consensus but prepared for future activation
+        // The implementation is complete but set to activate at a very high block height (effectively never)
+        // This can be activated in the future by setting a specific activation height
         digishieldConsensus = consensus;
 
-        digishieldConsensus.nHeightEffective = 0xFFFFFFFF; // like never
+        digishieldConsensus.nHeightEffective = 0xFFFFFFFF; // Set to maximum value (effectively never activate)
 
         digishieldConsensus.fSimplifiedRewards = true;
         digishieldConsensus.fDigishieldDifficultyCalculation = true;
         digishieldConsensus.nPowTargetTimespan = 60; // post-digishield: 1 minute
         digishieldConsensus.nCoinbaseMaturity = 70;
 
-        // Not implementing digishield yet
+        // Digishield minimum difficulty blocks configuration
+        // This allows minimum difficulty blocks during Digishield activation
+        // Will be effective once Digishield is activated in the future
         minDifficultyConsensus = digishieldConsensus;
         minDifficultyConsensus.nHeightEffective = std::numeric_limits<uint32_t>::max();;
         minDifficultyConsensus.fPowAllowDigishieldMinDifficultyBlocks = true;
@@ -293,15 +300,18 @@ public:
     CTestNetParams() {
         strNetworkID = "test";
 
-        consensus.nSubsidyHalvingInterval = 100000;
+        // Not used in JunkCoin - Junkcoin uses fixed reward schedule by height instead of halvings
+        //consensus.nSubsidyHalvingInterval = 100000;
 
-        consensus.nMajorityEnforceBlockUpgrade = 1500;
-        consensus.nMajorityRejectBlockOutdated = 1900;
-        consensus.nMajorityWindow = 2000;
+        // These majority-based parameters are not used with height-based activation
+        //consensus.nMajorityEnforceBlockUpgrade = 1500;
+        //consensus.nMajorityRejectBlockOutdated = 1900;
+        //consensus.nMajorityWindow = 2000;
 
 
         // After deployments are activated we can change it
-        consensus.BIP34Hash = uint256S("0x00"); // unused for now.
+        // BIP34Hash is not used with height-based activation
+        //consensus.BIP34Hash = uint256S("0x00"); // unused for now.
         consensus.BIP34Height = 100000;
         consensus.BIP65Height = 100000;
         consensus.BIP66Height = 100000;
@@ -368,17 +378,22 @@ public:
         consensus.nBlockAfterAuxpowRewardThreshold = 5;
         consensus.fStrictChainId = true;
 
-        // We do not activate digishield in this consensus
+        // Digishield: Advanced difficulty adjustment algorithm
+        // Currently not activated in this consensus but prepared for future activation
+        // The implementation is complete but set to activate at a very high block height (effectively never)
+        // This can be activated in the future by setting a specific activation height
         digishieldConsensus = consensus;
 
-        digishieldConsensus.nHeightEffective = 0xFFFFFFFF; // like never
+        digishieldConsensus.nHeightEffective = 0xFFFFFFFF; // Set to maximum value (effectively never activate)
 
         digishieldConsensus.fSimplifiedRewards = true;
         digishieldConsensus.fDigishieldDifficultyCalculation = true;
         digishieldConsensus.nPowTargetTimespan = 60; // post-digishield: 1 minute
         digishieldConsensus.nCoinbaseMaturity = 240;
 
-        // Not implementing digishield yet
+        // Digishield minimum difficulty blocks configuration
+        // This allows minimum difficulty blocks during Digishield activation
+        // Will be effective once Digishield is activated in the future
         minDifficultyConsensus = digishieldConsensus;
         minDifficultyConsensus.nHeightEffective = std::numeric_limits<uint32_t>::max();;
         minDifficultyConsensus.fPowAllowDigishieldMinDifficultyBlocks = true;
@@ -475,16 +490,18 @@ private:
 public:
     CRegTestParams() {
         strNetworkID = "regtest";
-        // Not used in JunkCoin
-        consensus.nSubsidyHalvingInterval = 100000;
+        // Not used in JunkCoin - Junkcoin uses fixed reward schedule by height instead of halvings
+        //consensus.nSubsidyHalvingInterval = 100000;
 
-        consensus.nMajorityEnforceBlockUpgrade = 1500;
-        consensus.nMajorityRejectBlockOutdated = 1900;
-        consensus.nMajorityWindow = 2000;
+        // These majority-based parameters are not used with height-based activation
+        //consensus.nMajorityEnforceBlockUpgrade = 1500;
+        //consensus.nMajorityRejectBlockOutdated = 1900;
+        //consensus.nMajorityWindow = 2000;
 
 
         // After deployments are activated we can change it
-        consensus.BIP34Hash = uint256S("0x00"); // unused for now.
+        // BIP34Hash is not used with height-based activation
+        //consensus.BIP34Hash = uint256S("0x00"); // unused for now.
         consensus.BIP34Height = 100000;
         consensus.BIP65Height = 100000;
         consensus.BIP66Height = 100000;
@@ -507,16 +524,16 @@ public:
         consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].nTimeout = 1230767999; // December 31, 2008
 
         consensus.vDeployments[Consensus::DEPLOYMENT_BIP34].bit = 0;
-        consensus.vDeployments[Consensus::DEPLOYMENT_BIP34].nStartHeight = 100000; // Same activation height as SegWit
+        consensus.vDeployments[Consensus::DEPLOYMENT_BIP34].nStartHeight = 100; // Same activation height as SegWit
         consensus.vDeployments[Consensus::DEPLOYMENT_BIP34].nTimeout = 110080; // One week (10080 blocks) after start height
 
         consensus.vDeployments[Consensus::DEPLOYMENT_BIP66].bit = 1;
-        consensus.vDeployments[Consensus::DEPLOYMENT_BIP66].nStartHeight = 100000; // Same activation height as SegWit
+        consensus.vDeployments[Consensus::DEPLOYMENT_BIP66].nStartHeight = 100; // Same activation height as SegWit
         consensus.vDeployments[Consensus::DEPLOYMENT_BIP66].nTimeout = 110080; // One week (10080 blocks) after start height
 
 
         consensus.vDeployments[Consensus::DEPLOYMENT_BIP65].bit = 2;
-        consensus.vDeployments[Consensus::DEPLOYMENT_BIP65].nStartHeight = 100000; // Same activation height as SegWit
+        consensus.vDeployments[Consensus::DEPLOYMENT_BIP65].nStartHeight = 100; // Same activation height as SegWit
         consensus.vDeployments[Consensus::DEPLOYMENT_BIP65].nTimeout = 110080; // One week (10080 blocks) after start height
 
 
@@ -543,17 +560,22 @@ public:
         consensus.nBlockAfterAuxpowRewardThreshold = 5;
         consensus.fStrictChainId = true;
 
-        // We do not activate digishield in this consensus
+        // Digishield: Advanced difficulty adjustment algorithm
+        // Currently not activated in this consensus but prepared for future activation
+        // The implementation is complete but set to activate at a very high block height (effectively never)
+        // This can be activated in the future by setting a specific activation height
         digishieldConsensus = consensus;
 
-        digishieldConsensus.nHeightEffective = 0xFFFFFFFF; // like never
+        digishieldConsensus.nHeightEffective = 0xFFFFFFFF; // Set to maximum value (effectively never activate)
 
         digishieldConsensus.fSimplifiedRewards = true;
         digishieldConsensus.fDigishieldDifficultyCalculation = true;
         digishieldConsensus.nPowTargetTimespan = 60; // post-digishield: 1 minute
         digishieldConsensus.nCoinbaseMaturity = 240;
 
-        // Not implementing digishield yet
+        // Digishield minimum difficulty blocks configuration
+        // This allows minimum difficulty blocks during Digishield activation
+        // Will be effective once Digishield is activated in the future
         minDifficultyConsensus = digishieldConsensus;
         minDifficultyConsensus.nHeightEffective = std::numeric_limits<uint32_t>::max();;
         minDifficultyConsensus.fPowAllowDigishieldMinDifficultyBlocks = true;
