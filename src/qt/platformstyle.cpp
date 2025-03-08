@@ -14,6 +14,7 @@
 #include <QPixmap>
 #include <QStyleFactory>
 
+
 static const struct {
     const char *platformId;
     /** Show images on push buttons */
@@ -97,9 +98,15 @@ PlatformStyle::PlatformStyle(const QString &_name, bool _imagesOnButtons, bool _
     darkPalette.setColor(QPalette::Link, THEME_GOLD);
     darkPalette.setColor(QPalette::Highlight, THEME_GOLD);
     darkPalette.setColor(QPalette::HighlightedText, THEME_NAVY_BLUE);
+    // Improve visibility for checkboxes and borders
+    darkPalette.setColor(QPalette::Mid, THEME_BORDER);
+    darkPalette.setColor(QPalette::Light, THEME_CHECKBOX);
+    darkPalette.setColor(QPalette::Dark, THEME_BORDER);
     
     QApplication::setPalette(darkPalette);
     QApplication::setStyle(QStyleFactory::create("Fusion")); // Use Fusion style for better dark theme support
+
+    // Checkbox and radio button styling is handled in bitcoin.cpp
 }
 
 QImage PlatformStyle::SingleColorImage(const QString& filename) const

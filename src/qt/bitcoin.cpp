@@ -20,6 +20,7 @@
 #include "splashscreen.h"
 #include "utilitydialog.h"
 #include "winshutdownmonitor.h"
+#include "customcheckboxstyle.h"
 
 #ifdef ENABLE_WALLET
 #include "paymentserver.h"
@@ -573,6 +574,62 @@ int main(int argc, char *argv[])
 #endif
 
     BitcoinApplication app;
+
+    // Set white background for checkboxes and radio buttons
+    app.setStyleSheet("\
+        QCheckBox, QRadioButton, QTreeWidget::item { \
+            color: white; \
+        }\
+        QCheckBox::indicator, QRadioButton::indicator, QTreeWidget::indicator { \
+            width: 16px; \
+            height: 16px; \
+            background-color: white; \
+            border: 1px solid gray; \
+        }\
+    ");
+
+    // Set a more reliable stylesheet for checkboxes with white background and black checkmarks
+    app.setStyleSheet(app.styleSheet() + "\
+        QCheckBox::indicator, QTreeWidget::indicator {\
+            width: 16px;\
+            height: 16px;\
+            background-color: #333333;\
+            border: 1px solid gray;\
+        }\
+        QRadioButton::indicator {\
+            width: 16px;\
+            height: 16px;\
+            background-color: #333333;\
+            border: 1px solid gray;\
+            border-radius: 8px;\
+        }\
+        QCheckBox::indicator:checked {\
+            background-color: #333333;\
+            border: 1px solid gray;\
+            image: url(\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAwAAAAMCAYAAABWdVznAAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH4QgbDTcjzAJpHwAAAB1pVFh0Q29tbWVudAAAAAAAQ3JlYXRlZCB3aXRoIEdJTVBkLmUHAAAARklEQVQoz2NgIAP8//+fAZc4IyPjf1yKGXApZsKlAKYYrwJk59E1wBTjVYBsAVwDIQtgJuFVADMJrwKYSXgVwEzCqwCnIgDLFBcqUFUtlwAAAABJRU5ErkJggg==\");\
+        }\
+        QRadioButton::indicator:checked {\
+            background-color: #333333;\
+            border: 1px solid gray;\
+            border-radius: 8px;\
+        }\
+        QRadioButton::indicator:checked::after {\
+            content: \"\";\
+            display: block;\
+            width: 8px;\
+            height: 8px;\
+            border-radius: 4px;\
+            background-color: white;\
+            position: absolute;\
+            top: 4px;\
+            left: 4px;\
+        }\
+        QTreeWidget::indicator:checked {\
+            background-color: #333333;\
+            border: 1px solid gray;\
+            image: url(\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAwAAAAMCAYAAABWdVznAAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH4QgbDTcjzAJpHwAAAB1pVFh0Q29tbWVudAAAAAAAQ3JlYXRlZCB3aXRoIEdJTVBkLmUHAAAARklEQVQoz2NgIAP8//+fAZc4IyPjf1yKGXApZsKlAKYYrwJk59E1wBTjVYBsAVwDIQtgJuFVADMJrwKYSXgVwEzCqwCnIgDLFBcqUFUtlwAAAABJRU5ErkJggg==\");\
+        }\
+    ");
 
     // Register meta types used for QMetaObject::invokeMethod
     qRegisterMetaType< bool* >();

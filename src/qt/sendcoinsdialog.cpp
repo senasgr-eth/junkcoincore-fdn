@@ -10,6 +10,7 @@
 #include "bitcoinunits.h"
 #include "clientmodel.h"
 #include "coincontroldialog.h"
+#include "guiconstants.h"
 #include "guiutil.h"
 #include "optionsmodel.h"
 #include "platformstyle.h"
@@ -266,8 +267,8 @@ void SendCoinsDialog::on_sendButton_clicked()
         // generate bold amount string
         QString amount = "<b>" + BitcoinUnits::formatHtmlWithUnit(model->getOptionsModel()->getDisplayUnit(), rcp.amount);
         amount.append("</b>");
-        // generate monospace address string
-        QString address = "<span style='font-family: monospace;'>" + rcp.address;
+        // generate address string with consistent font
+        QString address = "<span style='font-family: " + FONT_FAMILY + "'>" + rcp.address;
         address.append("</span>");
 
         QString recipientElement;

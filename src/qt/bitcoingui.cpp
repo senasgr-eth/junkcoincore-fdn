@@ -49,6 +49,7 @@
 #include <QFontDatabase>
 #include <QListWidget>
 #include <QMenuBar>
+#include <QGraphicsOpacityEffect>
 #include <QMessageBox>
 #include <QMimeData>
 #include <QProgressDialog>
@@ -130,7 +131,69 @@ BitcoinGUI::BitcoinGUI(const PlatformStyle *_platformStyle, const NetworkStyle *
     spinnerFrame(0),
     platformStyle(_platformStyle)
 {
-    GUIUtil::restoreWindowGeometry("nWindow", QSize(850, 550), this);
+    GUIUtil::restoreWindowGeometry("nWindow", QSize(750, 500), this);
+    // Set minimum size to allow for shrinking
+    setMinimumSize(600, 400);
+
+    // Create a semi-transparent background image for the main window
+    if (walletFrame) {
+        // Create a custom background widget that will be placed behind everything
+        QLabel* bgLabel = new QLabel(walletFrame);
+        bgLabel->setObjectName("backgroundLabel");
+        
+        // Load the image and make it semi-transparent
+        QPixmap originalPixmap(":/icons/wallet_bgcoin_small");
+        
+        // Set up the label to properly display the image
+        bgLabel->setPixmap(originalPixmap);
+        bgLabel->setAlignment(Qt::AlignCenter);
+        bgLabel->setScaledContents(false); // Don't scale the contents, we'll handle that manually
+        bgLabel->setAttribute(Qt::WA_TransparentForMouseEvents); // Let mouse events pass through
+        
+        // Set opacity for the label
+        QGraphicsOpacityEffect* effect = new QGraphicsOpacityEffect(bgLabel);
+        effect->setOpacity(0.3); // 30% opacity
+        bgLabel->setGraphicsEffect(effect);
+        
+        // Make sure it stays in the background
+        bgLabel->lower();
+        
+        // We need to handle resize events to keep the background properly sized
+        // Install an event filter on the walletFrame
+        class ResizeEventFilter : public QObject {
+        public:
+            ResizeEventFilter(QLabel* label, QObject* parent = nullptr) 
+                : QObject(parent), m_label(label) {}
+            
+            bool eventFilter(QObject* obj, QEvent* event) override {
+                if (event->type() == QEvent::Resize) {
+                    QResizeEvent* resizeEvent = static_cast<QResizeEvent*>(event);
+                    QSize newSize = resizeEvent->size();
+                    
+                    // Center the label in the available space
+                    m_label->setGeometry(0, 0, newSize.width(), newSize.height());
+                    
+                    // Scale the pixmap to fit the window while maintaining aspect ratio
+                    QPixmap originalPixmap(":/icons/wallet_bgcoin_small");
+                    QPixmap scaledPixmap = originalPixmap.scaled(newSize, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+                    m_label->setPixmap(scaledPixmap);
+                    
+                    return false; // Let the event propagate
+                }
+                return false;
+            }
+            
+        private:
+            QLabel* m_label;
+        };
+        
+        // Create and install the filter
+        ResizeEventFilter* filter = new ResizeEventFilter(bgLabel, walletFrame);
+        walletFrame->installEventFilter(filter);
+        
+        // Initial sizing
+        bgLabel->setGeometry(0, 0, walletFrame->width(), walletFrame->height());
+    }
 
     QString windowTitle = tr(PACKAGE_NAME) + " - ";
 #ifdef ENABLE_WALLET

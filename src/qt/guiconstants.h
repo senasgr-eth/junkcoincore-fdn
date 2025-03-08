@@ -24,9 +24,42 @@ static const bool DEFAULT_SPLASHSCREEN = true;
 static const QColor THEME_NAVY_BLUE(26, 32, 44);
 static const QColor THEME_GOLD(218, 165, 32);
 static const QColor THEME_TEXT(255, 255, 255);
+static const QColor THEME_BORDER(180, 180, 180); /* Light gray for borders and lines */
+static const QColor THEME_CHECKBOX(240, 240, 240); /* Brighter white for checkboxes */
+
+/* Font constants */
+static const QString FONT_FAMILY = "Roboto";
+static const int FONT_SIZE_NORMAL = 10;
+static const int FONT_SIZE_LARGE = 12;
+static const int FONT_SIZE_SMALL = 9;
 
 /* Invalid field background style */
 #define STYLE_INVALID "background:#FF8080"
+
+/* Checkbox and radio button style for better visibility on dark background */
+#define STYLE_CHECKBOX_RADIOBUTTON "\
+    QCheckBox, QRadioButton, QTreeWidget::item {\
+        color: white;\
+    }\
+    QCheckBox::indicator, QRadioButton::indicator, QTreeWidget::indicator {\
+        width: 16px;\
+        height: 16px;\
+        background-color: white;\
+        border: 1px solid gray;\
+    }\
+    QCheckBox::indicator:checked, QTreeWidget::indicator:checked {\
+        background-color: white;\
+        border: 1px solid gray;\
+    }\
+    QCheckBox::indicator:checked, QTreeWidget::indicator:checked {\
+        background-color: white;\
+        border: 1px solid gray;\
+    }\
+    QRadioButton::indicator:checked {\
+        background-color: white;\
+        border: 1px solid gray;\
+    }\
+"
 
 /* Transaction list -- unconfirmed transaction */
 static const QColor COLOR_UNCONFIRMED(128, 128, 128);
@@ -56,7 +89,7 @@ static const int MAX_URI_LENGTH = 255;
 #define SPINNER_FRAMES 36
 
 #define QAPP_ORG_NAME "JunkCoin"
-#define QAPP_ORG_DOMAIN "LUCKYCOIN.DOMAIN"
+#define QAPP_ORG_DOMAIN "JUNKCOIN.DOMAIN"
 #define QAPP_APP_NAME_DEFAULT "JunkCoin-Qt"
 #define QAPP_APP_NAME_TESTNET "JunkCoin-Qt-testnet"
 
