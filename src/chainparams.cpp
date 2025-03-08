@@ -101,28 +101,46 @@ public:
         consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].nStartTime = 1199145601; // January 1, 2008
         consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].nTimeout = 1230767999; // December 31, 2008
 
+        // BIP34 is not currently enforced, will activate at height 400000
         consensus.vDeployments[Consensus::DEPLOYMENT_BIP34].bit = 0;
-        consensus.vDeployments[Consensus::DEPLOYMENT_BIP34].nStartTime = 1534490155;   // 2023-12-25 00:00:00
-        consensus.vDeployments[Consensus::DEPLOYMENT_BIP34].nTimeout   = 1764490155;   // 2024-12-25 00:00:00
+        consensus.vDeployments[Consensus::DEPLOYMENT_BIP34].nStartHeight = 400000; // Activation height
+        consensus.vDeployments[Consensus::DEPLOYMENT_BIP34].nTimeout = 410080; // One week (10080 blocks) after start height
 
+        // BIP66 is not currently enforced, will activate at height 400000
         consensus.vDeployments[Consensus::DEPLOYMENT_BIP66].bit = 1;
-        consensus.vDeployments[Consensus::DEPLOYMENT_BIP66].nStartTime = 1534490155;   // 2023-12-25 00:00:00
-        consensus.vDeployments[Consensus::DEPLOYMENT_BIP66].nTimeout   = 1764490155;   // 2024-12-25 18:00:00
+        consensus.vDeployments[Consensus::DEPLOYMENT_BIP66].nStartHeight = 400000; // Activation height
+        consensus.vDeployments[Consensus::DEPLOYMENT_BIP66].nTimeout = 410080; // One week (10080 blocks) after start height
 
+        // BIP65 is already enforced, but we'll formalize it with height-based activation
+        // to maintain consistency with other BIPs
         consensus.vDeployments[Consensus::DEPLOYMENT_BIP65].bit = 2;
-        consensus.vDeployments[Consensus::DEPLOYMENT_BIP65].nStartTime = 1534490155;   // 2023-12-25 00:00:00
-        consensus.vDeployments[Consensus::DEPLOYMENT_BIP65].nTimeout   = 1764490155;   // 2024-12-25 18:00:00
+        consensus.vDeployments[Consensus::DEPLOYMENT_BIP65].nStartHeight = 1; // Already active, set to height 1
+        consensus.vDeployments[Consensus::DEPLOYMENT_BIP65].nTimeout = 410080; // Keep timeout consistent
+        
+        // Set the activation heights in the consensus parameters
+        consensus.BIP34Height = 400000;
+        consensus.BIP66Height = 400000;
+        consensus.BIP65Height = 1; // Already active
+        consensus.CSVHeight = 400000;
+        consensus.SegwitHeight = 400000;
 
         // Deployment of BIP68, BIP112, and BIP113.
-        // XXX: BIP heights and hashes all need to be updated to JunkCoin values
+        // CSV is currently in 'started' state with miner signaling
         consensus.vDeployments[Consensus::DEPLOYMENT_CSV].bit = 3;
-        consensus.vDeployments[Consensus::DEPLOYMENT_CSV].nStartTime = 1724732207; // 2023-12-25 00:00:00
-        consensus.vDeployments[Consensus::DEPLOYMENT_CSV].nTimeout = 1764490155;   // 2024-12-25 18:00:00
+        consensus.vDeployments[Consensus::DEPLOYMENT_CSV].nStartHeight = 400000; // Activation height
+        consensus.vDeployments[Consensus::DEPLOYMENT_CSV].nTimeout = 410080; // One week (10080 blocks) after start height
+        // Keep the existing time-based parameters to maintain backward compatibility until height activation
+        consensus.vDeployments[Consensus::DEPLOYMENT_CSV].nStartTime = 1724732207; // Current startTime
+        consensus.vDeployments[Consensus::DEPLOYMENT_CSV].nTimeTimeout = 1764490155; // Current timeout
 
         // Deployment of SegWit (BIP141, BIP143, and BIP147)
+        // SegWit is currently in 'started' state with miner signaling
         consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].bit = 4;
-        consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].nStartHeight = 250000; // Mainnet activation height
-        consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].nTimeout = 260080; // One week (10080 blocks) after start height
+        consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].nStartHeight = 400000; // Mainnet activation height
+        consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].nTimeout = 410080; // One week (10080 blocks) after start height
+        // Keep the existing time-based parameters to maintain backward compatibility until height activation
+        consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].nStartTime = 1724732207; // Current startTime
+        consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].nTimeTimeout = 1764490155; // Current timeout
 
         // The best chain should have at least this much work.
         consensus.nMinimumChainWork = uint256S("0x0000000000000000000000000000000000000000000000000000000000000000"); // 4,303,965
@@ -284,9 +302,11 @@ public:
 
         // After deployments are activated we can change it
         consensus.BIP34Hash = uint256S("0x00"); // unused for now.
-        consensus.BIP65Height = 99999999;
-        consensus.BIP65Height = 99999999;
-        consensus.BIP66Height = 99999999;
+        consensus.BIP34Height = 100000;
+        consensus.BIP65Height = 100000;
+        consensus.BIP66Height = 100000;
+        consensus.CSVHeight = 100000;
+        consensus.SegwitHeight = 100000;
 
 
         consensus.powLimit = uint256S("0x00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"); // ~uint256(0) >> 20;
@@ -304,29 +324,36 @@ public:
         consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].nTimeout = 1230767999; // December 31, 2008
 
         consensus.vDeployments[Consensus::DEPLOYMENT_BIP34].bit = 0;
-        consensus.vDeployments[Consensus::DEPLOYMENT_BIP34].nStartTime = 1703462400;   // 2023-12-25 00:00:00
-        consensus.vDeployments[Consensus::DEPLOYMENT_BIP34].nTimeout   = 1735084800;   // 2024-12-25 00:00:00
+        consensus.vDeployments[Consensus::DEPLOYMENT_BIP34].nStartHeight = 100000; // Same activation height as SegWit
+        consensus.vDeployments[Consensus::DEPLOYMENT_BIP34].nTimeout = 110080; // One week (10080 blocks) after start height
 
         consensus.vDeployments[Consensus::DEPLOYMENT_BIP66].bit = 1;
-        consensus.vDeployments[Consensus::DEPLOYMENT_BIP66].nStartTime = 1703462400;   // 2023-12-25 00:00:00
-        consensus.vDeployments[Consensus::DEPLOYMENT_BIP66].nTimeout   = 1735084800;   // 2024-12-25 18:00:00
+        consensus.vDeployments[Consensus::DEPLOYMENT_BIP66].nStartHeight = 100000; // Same activation height as SegWit
+        consensus.vDeployments[Consensus::DEPLOYMENT_BIP66].nTimeout = 110080; // One week (10080 blocks) after start height
 
 
         consensus.vDeployments[Consensus::DEPLOYMENT_BIP65].bit = 2;
-        consensus.vDeployments[Consensus::DEPLOYMENT_BIP65].nStartTime = 1703462400;   // 2023-12-25 00:00:00
-        consensus.vDeployments[Consensus::DEPLOYMENT_BIP65].nTimeout   = 1735084800;   // 2024-12-25 18:00:00
+        consensus.vDeployments[Consensus::DEPLOYMENT_BIP65].nStartHeight = 100000; // Same activation height as SegWit
+        consensus.vDeployments[Consensus::DEPLOYMENT_BIP65].nTimeout = 110080; // One week (10080 blocks) after start height
 
 
         // Deployment of BIP68, BIP112, and BIP113.
-        // XXX: BIP heights and hashes all need to be updated to JunkCoin values
+        // CSV is currently in 'started' state with miner signaling on testnet
         consensus.vDeployments[Consensus::DEPLOYMENT_CSV].bit = 3;
         consensus.vDeployments[Consensus::DEPLOYMENT_CSV].nStartHeight = 100000; // Testnet activation height
-        consensus.vDeployments[Consensus::DEPLOYMENT_CSV].nTimeout = 110080;   // One week (10080 blocks) after start height
+        consensus.vDeployments[Consensus::DEPLOYMENT_CSV].nTimeout = 110080; // One week (10080 blocks) after start height
+        // Keep the existing time-based parameters to maintain backward compatibility until height activation
+        consensus.vDeployments[Consensus::DEPLOYMENT_CSV].nStartTime = 1724732207; // Current startTime
+        consensus.vDeployments[Consensus::DEPLOYMENT_CSV].nTimeTimeout = 1764490155; // Current timeout
 
         // Deployment of SegWit (BIP141, BIP143, and BIP147)
+        // SegWit is currently in 'started' state with miner signaling on testnet
         consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].bit = 4;
         consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].nStartHeight = 100000; // Testnet activation height
-        consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].nTimeout = 110080;   // One week (10080 blocks) after start height
+        consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].nTimeout = 110080; // One week (10080 blocks) after start height
+        // Keep the existing time-based parameters to maintain backward compatibility until height activation
+        consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].nStartTime = 1724732207; // Current startTime
+        consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].nTimeTimeout = 1764490155; // Current timeout
 
         // The best chain should have at least this much work.
         consensus.nMinimumChainWork = uint256S("0x0000000000000000000000000000000000000000000000000000000000000000"); // 4,303,965
@@ -458,9 +485,11 @@ public:
 
         // After deployments are activated we can change it
         consensus.BIP34Hash = uint256S("0x00"); // unused for now.
-        consensus.BIP65Height = 99999999;
-        consensus.BIP65Height = 99999999;
-        consensus.BIP66Height = 99999999;
+        consensus.BIP34Height = 100000;
+        consensus.BIP65Height = 100000;
+        consensus.BIP66Height = 100000;
+        consensus.CSVHeight = 100000;
+        consensus.SegwitHeight = 100000;
 
 
         consensus.powLimit = uint256S("0x00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"); // ~uint256(0) >> 20;
@@ -478,17 +507,17 @@ public:
         consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].nTimeout = 1230767999; // December 31, 2008
 
         consensus.vDeployments[Consensus::DEPLOYMENT_BIP34].bit = 0;
-        consensus.vDeployments[Consensus::DEPLOYMENT_BIP34].nStartTime = 1703462400;   // 2023-12-25 00:00:00
-        consensus.vDeployments[Consensus::DEPLOYMENT_BIP34].nTimeout   = 1735084800;   // 2024-12-25 00:00:00
+        consensus.vDeployments[Consensus::DEPLOYMENT_BIP34].nStartHeight = 100000; // Same activation height as SegWit
+        consensus.vDeployments[Consensus::DEPLOYMENT_BIP34].nTimeout = 110080; // One week (10080 blocks) after start height
 
         consensus.vDeployments[Consensus::DEPLOYMENT_BIP66].bit = 1;
-        consensus.vDeployments[Consensus::DEPLOYMENT_BIP66].nStartTime = 1703462400;   // 2023-12-25 00:00:00
-        consensus.vDeployments[Consensus::DEPLOYMENT_BIP66].nTimeout   = 1735084800;   // 2024-12-25 18:00:00
+        consensus.vDeployments[Consensus::DEPLOYMENT_BIP66].nStartHeight = 100000; // Same activation height as SegWit
+        consensus.vDeployments[Consensus::DEPLOYMENT_BIP66].nTimeout = 110080; // One week (10080 blocks) after start height
 
 
         consensus.vDeployments[Consensus::DEPLOYMENT_BIP65].bit = 2;
-        consensus.vDeployments[Consensus::DEPLOYMENT_BIP65].nStartTime = 1703462400;   // 2023-12-25 00:00:00
-        consensus.vDeployments[Consensus::DEPLOYMENT_BIP65].nTimeout   = 1735084800;   // 2024-12-25 18:00:00
+        consensus.vDeployments[Consensus::DEPLOYMENT_BIP65].nStartHeight = 100000; // Same activation height as SegWit
+        consensus.vDeployments[Consensus::DEPLOYMENT_BIP65].nTimeout = 110080; // One week (10080 blocks) after start height
 
 
         // Deployment of BIP68, BIP112, and BIP113.

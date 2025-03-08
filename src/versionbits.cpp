@@ -42,6 +42,9 @@ ThresholdState AbstractThresholdConditionChecker::GetStateFor(const CBlockIndex*
     int64_t nTimeStart = BeginTime(params);
     int64_t nTimeTimeout = EndTime(params);
 
+    // If height-based activation is set (non-zero), prioritize it over time-based activation
+    bool useHeightActivation = (nHeightStart > 0);
+
     // A block's state is always the same as that of the first of its period, so it is computed based on a pindexPrev whose height equals a multiple of nPeriod - 1.
     if (pindexPrev != NULL) {
         pindexPrev = pindexPrev->GetAncestor(pindexPrev->nHeight - ((pindexPrev->nHeight + 1) % nPeriod));
@@ -55,7 +58,8 @@ ThresholdState AbstractThresholdConditionChecker::GetStateFor(const CBlockIndex*
             cache[pindexPrev] = THRESHOLD_DEFINED;
             break;
         }
-        if (pindexPrev->nHeight < nHeightStart && pindexPrev->GetMedianTimePast() < nTimeStart) {
+        if ((useHeightActivation && pindexPrev->nHeight < nHeightStart) || 
+            (!useHeightActivation && pindexPrev->GetMedianTimePast() < nTimeStart)) {
             // Optimization: don't recompute down further, as we know every earlier block will be before the start
             cache[pindexPrev] = THRESHOLD_DEFINED;
             break;
@@ -76,19 +80,34 @@ ThresholdState AbstractThresholdConditionChecker::GetStateFor(const CBlockIndex*
 
         switch (state) {
             case THRESHOLD_DEFINED: {
-                if (pindexPrev->nHeight >= nHeightTimeout || pindexPrev->GetMedianTimePast() >= nTimeTimeout) {
+                // Check for timeout first
+                if ((useHeightActivation && pindexPrev->nHeight >= nHeightTimeout) ||
+                    (!useHeightActivation && pindexPrev->GetMedianTimePast() >= nTimeTimeout)) {
                     stateNext = THRESHOLD_FAILED;
-                } else if (pindexPrev->nHeight >= nHeightStart || pindexPrev->GetMedianTimePast() >= nTimeStart) {
+                } 
+                // If using height-based activation and we've reached the start height, go directly to LOCKED_IN
+                else if (useHeightActivation && pindexPrev->nHeight >= nHeightStart) {
+                    stateNext = THRESHOLD_LOCKED_IN;
+                } 
+                // Otherwise, if using time-based activation and we've reached the start time, go to STARTED
+                else if (!useHeightActivation && pindexPrev->GetMedianTimePast() >= nTimeStart) {
                     stateNext = THRESHOLD_STARTED;
                 }
                 break;
             }
             case THRESHOLD_STARTED: {
-                if (pindexPrev->GetMedianTimePast() >= nTimeTimeout) {
+                // Check for timeout first
+                if ((useHeightActivation && pindexPrev->nHeight >= nHeightTimeout) ||
+                    (!useHeightActivation && pindexPrev->GetMedianTimePast() >= nTimeTimeout)) {
                     stateNext = THRESHOLD_FAILED;
                     break;
                 }
-                // We need to count
+                // For height-based activation, check if we've reached the start height
+                if (useHeightActivation && pindexPrev->nHeight >= nHeightStart) {
+                    stateNext = THRESHOLD_LOCKED_IN;
+                    break;
+                }
+                // For time-based activation, we need to count miner signaling
                 const CBlockIndex* pindexCount = pindexPrev;
                 int count = 0;
                 for (int i = 0; i < nPeriod; i++) {
