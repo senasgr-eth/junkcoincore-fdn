@@ -199,6 +199,12 @@ public:
     bool isLockedCoin(uint256 hash, unsigned int n) const;
     void lockCoin(COutPoint& output);
     void unlockCoin(COutPoint& output);
+
+    // Multisig functionality
+    bool addMultisigAddress(const CScript& redeemScript);
+    bool importMultisigAddress(const CScript& redeemScript, const std::vector<CPubKey>& pubkeys, bool& importedAsReadOnly);
+    bool signMultisigTx(CMutableTransaction& tx);
+    bool broadcastTransaction(const CMutableTransaction& tx, std::string& error);
     void listLockedCoins(std::vector<COutPoint>& vOutpts);
 
     void loadReceiveRequests(std::vector<std::string>& vReceiveRequests);

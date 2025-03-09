@@ -57,6 +57,7 @@ public Q_SLOTS:
                     const CAmount& watchOnlyBalance, const CAmount& watchUnconfBalance, const CAmount& watchImmatureBalance);
 
 private:
+    void createUnsignedTransaction();
     Ui::SendCoinsDialog *ui;
     ClientModel *clientModel;
     WalletModel *model;
@@ -73,6 +74,7 @@ private:
 
 private Q_SLOTS:
     void on_sendButton_clicked();
+    void on_createUnsignedButton_clicked();
     void on_buttonChooseFee_clicked();
     void on_buttonMinimizeFee_clicked();
     void removeEntry(SendCoinsEntry* entry);

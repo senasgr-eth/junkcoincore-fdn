@@ -22,6 +22,9 @@
 #include "util.h" // for GetBoolArg
 #include "wallet/wallet.h"
 #include "wallet/walletdb.h" // for BackupWallet
+#include "script/sign.h" // for SignSignature
+#include "script/script.h" // for CScriptID
+#include "primitives/transaction.h" // for MakeTransactionRef
 
 #include <stdint.h>
 
@@ -732,4 +735,88 @@ bool WalletModel::hdEnabled() const
 int WalletModel::getDefaultConfirmTarget() const
 {
     return nTxConfirmTarget;
+}
+
+bool WalletModel::addMultisigAddress(const CScript& redeemScript)
+{
+    if (!wallet)
+        return false;
+
+    LOCK2(cs_main, wallet->cs_wallet);
+
+    // Add the redeem script to the wallet
+    try {
+        CScriptID scriptID(redeemScript);
+        CBitcoinAddress address(scriptID);
+        wallet->AddCScript(redeemScript);
+        wallet->SetAddressBook(address.Get(), "", "multisig");
+        return true;
+    } catch (std::runtime_error&) {
+        return false;
+    }
+}
+
+bool WalletModel::importMultisigAddress(const CScript& redeemScript, const std::vector<CPubKey>& pubkeys, bool& importedAsReadOnly)
+{
+    if (!wallet)
+        return false;
+
+    LOCK2(cs_main, wallet->cs_wallet);
+
+    // Check if we have any of the private keys for this multisig address
+    bool hasPrivKey = false;
+    for (const CPubKey& pubKey : pubkeys) {
+        CKeyID keyID = pubKey.GetID();
+        CKey key;
+        if (wallet->GetKey(keyID, key)) {
+            // We found a private key for this pubkey
+            hasPrivKey = true;
+            break;
+        }
+    }
+    
+    importedAsReadOnly = !hasPrivKey;
+
+    // Add the redeem script to the wallet
+    try {
+        CScriptID scriptID(redeemScript);
+        CBitcoinAddress address(scriptID);
+        wallet->AddCScript(redeemScript);
+        wallet->SetAddressBook(address.Get(), "", "multisig");
+        return true;
+    } catch (std::runtime_error&) {
+        return false;
+    }
+}
+
+bool WalletModel::signMultisigTx(CMutableTransaction& tx)
+{
+    if (!wallet)
+        return false;
+
+    LOCK2(cs_main, wallet->cs_wallet);
+
+    // Sign the transaction
+    try {
+        return SignSignature(*wallet, CScript(), tx, 0, 0, SIGHASH_ALL);
+    } catch (std::runtime_error&) {
+        return false;
+    }
+}
+
+bool WalletModel::broadcastTransaction(const CMutableTransaction& tx, std::string& error)
+{
+    if (!wallet)
+        return false;
+
+    LOCK2(cs_main, wallet->cs_wallet);
+
+    CValidationState state;
+    CWalletTx wtx(wallet, MakeTransactionRef(tx));
+    CReserveKey reservekey(wallet);
+    if (!wallet->CommitTransaction(wtx, reservekey, g_connman.get(), state)) {
+        error = state.GetRejectReason();
+        return false;
+    }
+    return true;
 }

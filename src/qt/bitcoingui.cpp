@@ -27,6 +27,7 @@
 #ifdef ENABLE_WALLET
 #include "walletframe.h"
 #include "walletmodel.h"
+#include "multisigdialog.h"
 #endif // ENABLE_WALLET
 
 #ifdef Q_OS_MAC
@@ -390,6 +391,28 @@ void BitcoinGUI::createActions()
 {
     QActionGroup *tabGroup = new QActionGroup(this);
 
+    // Create multisig actions
+    multisigAction = new QAction(platformStyle->TextColorIcon(":/icons/multisig"), tr("&Multisig"), this);
+    multisigAction->setStatusTip(tr("Multisig wallet operations"));
+    multisigAction->setToolTip(multisigAction->statusTip());
+
+    createMultisigAction = new QAction(platformStyle->TextColorIcon(":/icons/add"), tr("&Create Multisig Wallet..."), this);
+    createMultisigAction->setStatusTip(tr("Create a new multisig wallet"));
+    createMultisigAction->setToolTip(createMultisigAction->statusTip());
+
+    importMultisigAction = new QAction(platformStyle->TextColorIcon(":/icons/import"), tr("&Import Multisig Wallet..."), this);
+    importMultisigAction->setStatusTip(tr("Import an existing multisig wallet"));
+    importMultisigAction->setToolTip(importMultisigAction->statusTip());
+
+    signMultisigAction = new QAction(platformStyle->TextColorIcon(":/icons/edit"), tr("&Sign Multisig Transaction..."), this);
+    signMultisigAction->setStatusTip(tr("Sign a multisig transaction"));
+    signMultisigAction->setToolTip(signMultisigAction->statusTip());
+
+    broadcastMultisigAction = new QAction(platformStyle->TextColorIcon(":/icons/send"), tr("&Broadcast Multisig Transaction..."), this);
+    broadcastMultisigAction->setStatusTip(tr("Broadcast a signed multisig transaction"));
+    broadcastMultisigAction->setToolTip(broadcastMultisigAction->statusTip());
+
+
     overviewAction = new QAction(platformStyle->SingleColorIcon(":/icons/overview"), tr("&HOME"), this);
     overviewAction->setStatusTip(tr("Show general overview of wallet"));
     overviewAction->setToolTip(overviewAction->statusTip());
@@ -433,6 +456,20 @@ void BitcoinGUI::createActions()
     connect(overviewAction, SIGNAL(triggered()), this, SLOT(gotoOverviewPage()));
     connect(sendCoinsAction, SIGNAL(triggered()), this, SLOT(showNormalIfMinimized()));
     connect(sendCoinsAction, SIGNAL(triggered()), this, SLOT(gotoSendCoinsPage()));
+
+    // Connect multisig actions
+    connect(createMultisigAction, &QAction::triggered, [this]() {
+        if (walletFrame) walletFrame->showMultisigDialog(MultisigDialogMode::CreateWallet);
+    });
+    connect(importMultisigAction, &QAction::triggered, [this]() {
+        if (walletFrame) walletFrame->showMultisigDialog(MultisigDialogMode::ImportWallet);
+    });
+    connect(signMultisigAction, &QAction::triggered, [this]() {
+        if (walletFrame) walletFrame->showMultisigDialog(MultisigDialogMode::SignTransaction);
+    });
+    connect(broadcastMultisigAction, &QAction::triggered, [this]() {
+        if (walletFrame) walletFrame->showMultisigDialog(MultisigDialogMode::BroadcastTransaction);
+    });
     connect(sendCoinsMenuAction, SIGNAL(triggered()), this, SLOT(showNormalIfMinimized()));
     connect(sendCoinsMenuAction, SIGNAL(triggered()), this, SLOT(gotoSendCoinsPage()));
     connect(receiveCoinsAction, SIGNAL(triggered()), this, SLOT(showNormalIfMinimized()));
@@ -545,6 +582,15 @@ void BitcoinGUI::createMenuBar()
         file->addAction(verifyMessageAction);
         file->addAction(paperWalletAction);
         file->addSeparator();
+        
+        // Add multisig submenu
+        QMenu *multisigMenu = file->addMenu(tr("&Multisig"));
+        multisigMenu->addAction(createMultisigAction);
+        multisigMenu->addAction(importMultisigAction);
+        multisigMenu->addAction(signMultisigAction);
+        multisigMenu->addAction(broadcastMultisigAction);
+        file->addSeparator();
+        
         file->addAction(importPrivateKeyAction);
         file->addAction(usedSendingAddressesAction);
         file->addAction(usedReceivingAddressesAction);
@@ -691,6 +737,12 @@ void BitcoinGUI::setWalletActionsEnabled(bool enabled)
     usedReceivingAddressesAction->setEnabled(enabled);
     openAction->setEnabled(enabled);
     paperWalletAction->setEnabled(enabled);
+    
+    // Enable/disable multisig actions
+    createMultisigAction->setEnabled(enabled);
+    importMultisigAction->setEnabled(enabled);
+    signMultisigAction->setEnabled(enabled);
+    broadcastMultisigAction->setEnabled(enabled);
 }
 
 void BitcoinGUI::createTrayIcon(const NetworkStyle *networkStyle)

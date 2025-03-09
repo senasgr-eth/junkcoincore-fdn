@@ -9,6 +9,14 @@
 #include <QFrame>
 #include <QMap>
 
+// Forward declarations for multisig dialog
+enum class MultisigDialogMode {
+    CreateWallet,
+    ImportWallet,
+    SignTransaction,
+    BroadcastTransaction
+};
+
 class BitcoinGUI;
 class ClientModel;
 class PlatformStyle;
@@ -96,6 +104,9 @@ public Q_SLOTS:
     void usedReceivingAddresses();
     /** Pass on signal over requested out-of-sync-warning information */
     void outOfSyncWarningClicked();
+
+    /** Show multisig dialog in specified mode */
+    void showMultisigDialog(MultisigDialogMode mode);
 };
 
 #endif // BITCOIN_QT_WALLETFRAME_H
