@@ -154,7 +154,7 @@ public:
     };
 
     // prepare transaction for getting txfee before sending coins
-    SendCoinsReturn prepareTransaction(WalletModelTransaction &transaction, const CCoinControl *coinControl = NULL);
+    SendCoinsReturn prepareTransaction(WalletModelTransaction &transaction, const CCoinControl *coinControl = NULL, bool createUnsigned = false);
 
     // Send coins to a list of recipients
     SendCoinsReturn sendCoins(WalletModelTransaction &transaction);
@@ -203,6 +203,7 @@ public:
     // Multisig functionality
     bool addMultisigAddress(const CScript& redeemScript);
     bool importMultisigAddress(const CScript& redeemScript, const std::vector<CPubKey>& pubkeys, bool& importedAsReadOnly);
+    bool importMultisigAddressWithKeys(const CScript& redeemScript, const std::vector<CPubKey>& pubkeys, const std::vector<std::string>& keys, bool& importedAsReadOnly);
     bool signMultisigTx(CMutableTransaction& tx);
     bool broadcastTransaction(const CMutableTransaction& tx, std::string& error);
     void listLockedCoins(std::vector<COutPoint>& vOutpts);

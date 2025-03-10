@@ -197,7 +197,7 @@ bool WalletModel::validateAddress(const QString &address)
     return addressParsed.IsValid();
 }
 
-WalletModel::SendCoinsReturn WalletModel::prepareTransaction(WalletModelTransaction &transaction, const CCoinControl *coinControl)
+WalletModel::SendCoinsReturn WalletModel::prepareTransaction(WalletModelTransaction &transaction, const CCoinControl *coinControl, bool createUnsigned)
 {
     CAmount total = 0;
     bool fSubtractFeeFromAmount = false;
@@ -282,7 +282,15 @@ WalletModel::SendCoinsReturn WalletModel::prepareTransaction(WalletModelTransact
 
         CWalletTx *newTx = transaction.getTransaction();
         CReserveKey *keyChange = transaction.getPossibleKeyChange();
-        bool fCreated = wallet->CreateTransaction(vecSend, *newTx, *keyChange, nFeeRequired, nChangePosRet, strFailReason, coinControl);
+        bool fCreated = false;
+        
+        if (createUnsigned) {
+            // For unsigned transactions, use CreateTransaction with the sign=false parameter
+            fCreated = wallet->CreateTransaction(vecSend, *newTx, *keyChange, nFeeRequired, nChangePosRet, strFailReason, coinControl, false);
+        } else {
+            // For normal transactions, use the default CreateTransaction with sign=true (default)
+            fCreated = wallet->CreateTransaction(vecSend, *newTx, *keyChange, nFeeRequired, nChangePosRet, strFailReason, coinControl);
+        }
         transaction.setTransactionFee(nFeeRequired);
         if (fSubtractFeeFromAmount && fCreated)
             transaction.reassignAmounts(nChangePosRet);
@@ -772,6 +780,77 @@ bool WalletModel::importMultisigAddress(const CScript& redeemScript, const std::
             // We found a private key for this pubkey
             hasPrivKey = true;
             break;
+        }
+    }
+    
+    importedAsReadOnly = !hasPrivKey;
+
+    // Add the redeem script to the wallet
+    try {
+        CScriptID scriptID(redeemScript);
+        CBitcoinAddress address(scriptID);
+        wallet->AddCScript(redeemScript);
+        wallet->SetAddressBook(address.Get(), "", "multisig");
+        return true;
+    } catch (std::runtime_error&) {
+        return false;
+    }
+}
+
+bool WalletModel::importMultisigAddressWithKeys(const CScript& redeemScript, const std::vector<CPubKey>& pubkeys, const std::vector<std::string>& keys, bool& importedAsReadOnly)
+{
+    if (!wallet)
+        return false;
+
+    LOCK2(cs_main, wallet->cs_wallet);
+
+    // First import the private keys if provided
+    bool hasImportedKey = false;
+    for (size_t i = 0; i < keys.size(); i++) {
+        CBitcoinSecret vchSecret;
+        if (!vchSecret.SetString(keys[i]))
+            continue;  // Skip invalid keys
+            
+        CKey key = vchSecret.GetKey();
+        if (!key.IsValid())
+            continue;
+            
+        CPubKey pubkey = key.GetPubKey();
+        CKeyID keyid = pubkey.GetID();
+        
+        // Check if this key corresponds to one of our pubkeys
+        bool keyMatchesPubkey = false;
+        for (const CPubKey& pk : pubkeys) {
+            if (pk.GetID() == keyid) {
+                keyMatchesPubkey = true;
+                break;
+            }
+        }
+        
+        if (!keyMatchesPubkey)
+            continue;  // Skip keys that don't match our pubkeys
+            
+        // Import the key
+        if (wallet->HaveKey(keyid))
+            continue;  // Skip if we already have this key
+            
+        wallet->AddKey(key);
+        hasImportedKey = true;
+    }
+    
+    // Check if we have any private keys for this multisig address (including newly imported ones)
+    bool hasPrivKey = false;
+    if (hasImportedKey) {
+        hasPrivKey = true;
+    } else {
+        for (const CPubKey& pubKey : pubkeys) {
+            CKeyID keyID = pubKey.GetID();
+            CKey key;
+            if (wallet->GetKey(keyID, key)) {
+                // We found a private key for this pubkey
+                hasPrivKey = true;
+                break;
+            }
         }
     }
     

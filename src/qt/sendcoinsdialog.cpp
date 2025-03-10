@@ -258,7 +258,10 @@ void SendCoinsDialog::createUnsignedTransaction()
 
     // Always use the "real" fee rather than the confirmation target
     CCoinControl coinControl;
-    prepareStatus = model->prepareTransaction(currentTransaction, &coinControl);
+    // Set the watch-only flag to true to allow creating transactions without signing them
+    coinControl.fAllowWatchOnly = true; // This allows creating transactions with watch-only addresses
+    // The third parameter (createUnsigned=true) in prepareTransaction will ensure no signatures are added
+    prepareStatus = model->prepareTransaction(currentTransaction, &coinControl, true); // Pass true to indicate we want an unsigned transaction
 
     // Process prepareStatus and on error generate message shown to user
     processSendCoinsReturn(prepareStatus,

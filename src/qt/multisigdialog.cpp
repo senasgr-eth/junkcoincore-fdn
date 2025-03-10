@@ -16,6 +16,7 @@
 #include "utilstrencodings.h"
 #include "wallet/wallet.h"
 #include "univalue.h"
+#include "rpcconsole.h"
 
 #include <QMessageBox>
 #include <QFileDialog>
@@ -1282,59 +1283,7 @@ void MultisigDialog::signMultisigTx()
         return;
     }
 
-    // Decode transaction
-    CMutableTransaction tx;
-    if (!DecodeHexTx(tx, strHexTx.toStdString())) {
-        QMessageBox::critical(this, tr("Error"), 
-            tr("Failed to decode transaction."));
-        return;
-    }
-    
-    // Check if this is a multisig transaction by examining the inputs
-    bool isMultisigTransaction = false;
-    for (const CTxIn& txin : tx.vin) {
-        // Check for multisig pattern in script or empty script (unsigned)
-        if (txin.scriptSig.empty()) {
-            // Empty script could be unsigned multisig, continue checking
-            continue;
-        }
-        
-        // Check for multisig pattern in script
-        CScript scriptSig = txin.scriptSig;
-        std::vector<unsigned char> data(scriptSig.begin(), scriptSig.end());
-        std::string scriptHex = HexStr(data);
-        
-        // Look for OP_0 which often indicates start of multisig script
-        if (scriptHex.substr(0, 2) == "00" && scriptHex.length() > 10) {
-            isMultisigTransaction = true;
-            break;
-        }
-    }
-    
-    // Also check outputs for P2SH addresses which are typically used for multisig
-    if (!isMultisigTransaction) {
-        for (const CTxOut& txout : tx.vout) {
-            txnouttype type;
-            std::vector<CTxDestination> addresses;
-            int nRequired;
-            if (ExtractDestinations(txout.scriptPubKey, type, addresses, nRequired)) {
-                if (type == TX_MULTISIG || type == TX_SCRIPTHASH) {
-                    isMultisigTransaction = true;
-                    break;
-                }
-            }
-        }
-    }
-    
-    // Reject if not a multisig transaction
-    if (!isMultisigTransaction) {
-        QMessageBox::warning(this, tr("Error"),
-            tr("This does not appear to be a multisig transaction. "
-               "Only multisig transactions can be signed with this tool."));
-        return;
-    }
-    
-    // Get the key ID from the address
+    // Get the private key for the signing address
     CBitcoinAddress addr(signingAddress.toStdString());
     if (!addr.IsValid()) {
         QMessageBox::warning(this, tr("Error"),
@@ -1348,21 +1297,74 @@ void MultisigDialog::signMultisigTx()
             tr("Could not get key ID from address."));
         return;
     }
-
-    // Sign transaction
-    bool fComplete = false;
-    try {
-        // The signMultisigTx method doesn't accept a keyID parameter, so we'll use the standard method
-        fComplete = model->signMultisigTx(tx);
-    } catch (...) {
-        showError(tr("Error"), tr("An error occurred while signing the transaction."));
+    
+    // Get the private key for this address
+    CKey key;
+    if (!pwalletMain->GetKey(keyID, key)) {
+        QMessageBox::warning(this, tr("Error"),
+            tr("Private key for the specified address is not available."));
         return;
     }
-
-    // Update transaction hex
-    std::string strHexSigned = EncodeHexTx(tx);
+    
+    // Get the private key in WIF format
+    std::string strPrivKey = CBitcoinSecret(key).ToString();
+    
+    // Prepare for signrawtransaction RPC command
+    // Format: signrawtransaction "hexstring" ( [{"txid":"id","vout":n,"scriptPubKey":"hex","redeemScript":"hex"},...] ["privatekey1",...] sighashtype )
+    
+    // Build the command string
+    std::string strCommand = "signrawtransaction ";
+    strCommand += strHexTx.toStdString();
+    
+    // Add private key array
+    strCommand += " [] [\"";
+    strCommand += strPrivKey;
+    strCommand += "\"]";
+    
+    // Execute the command
+    UniValue result;
+    std::string strResult;
+    
+    try {
+        // Execute the RPC command directly
+        if (!RPCConsole::RPCParseCommandLine(strResult, strCommand, true)) {
+            QMessageBox::critical(this, tr("Error"),
+                tr("Failed to execute signrawtransaction command."));
+            return;
+        }
+        
+        // Parse the result
+        result.read(strResult.c_str(), strResult.size());
+        
+    } catch (const std::exception& e) {
+        QMessageBox::critical(this, tr("Error"),
+            tr("Error signing transaction: %1").arg(QString::fromStdString(e.what())));
+        return;
+    }
+    
+    // Check for errors in the result
+    if (result.isObject() && result.exists("error") && !result["error"].isNull()) {
+        QString errorMsg = QString::fromStdString(result["error"].get_str());
+        QMessageBox::critical(this, tr("Error"),
+            tr("Error signing transaction: %1").arg(errorMsg));
+        return;
+    }
+    
+    // Get the hex of the signed transaction
+    std::string strHexSigned = result["hex"].get_str();
     ui->transactionHex->setPlainText(QString::fromStdString(strHexSigned));
     updateClearButton();
+    
+    // Check if the transaction is complete
+    bool fComplete = result["complete"].get_bool();
+    
+    // Decode the signed transaction to update our current transaction
+    CMutableTransaction tx;
+    if (!DecodeHexTx(tx, strHexSigned)) {
+        QMessageBox::critical(this, tr("Error"), 
+            tr("Failed to decode signed transaction."));
+        return;
+    }
     
     // Update the current transaction
     currentTransaction = tx;
@@ -1378,12 +1380,49 @@ void MultisigDialog::signMultisigTx()
         confirmBox.setDefaultButton(QMessageBox::Yes);
         
         if (confirmBox.exec() == QMessageBox::Yes) {
-            // Broadcast the transaction
-            broadcastMultisigTx();
+            // Check if this transaction has already been broadcast
+            uint256 txHash = tx.GetHash();
+            if (broadcastTransactions.find(txHash) != broadcastTransactions.end()) {
+                // Transaction has already been broadcast - completely block it
+                QMessageBox::critical(this, tr("Transaction Already Broadcast"),
+                    tr("This transaction has already been broadcast.\n"
+                       "To prevent double-spending issues, broadcasting the same transaction multiple times is not allowed."));
+                return;
+            }
+            
+            // Use sendrawtransaction command to broadcast
+            std::string strBroadcastCommand = "sendrawtransaction ";
+            strBroadcastCommand += strHexSigned;
+            
+            std::string strBroadcastResult;
+            std::string strError = "";
+            
+            try {
+                // Execute the broadcast command
+                if (!RPCConsole::RPCParseCommandLine(strBroadcastResult, strBroadcastCommand, true)) {
+                    QMessageBox::critical(this, tr("Error"),
+                        tr("Failed to execute sendrawtransaction command."));
+                    return;
+                }
+                
+                // Parse the result (should be a transaction hash)
+                UniValue broadcastResult;
+                broadcastResult.read(strBroadcastResult.c_str(), strBroadcastResult.size());
+                
+                // Add to our set of broadcast transactions
+                broadcastTransactions.insert(txHash);
+                showInfo(tr("Success"), tr("Transaction signed and broadcast successfully."));
+                // Clear the transaction hex field
+                ui->transactionHex->clear();
+                updateClearButton();
+            } catch (const std::exception& e) {
+                strError = e.what();
+                showError(tr("Error"), tr("Failed to broadcast transaction: %1").arg(QString::fromStdString(strError)));
+            }
         } else {
             // User chose not to broadcast, just show success message
             showInfo(tr("Success"), tr("Transaction signed successfully and ready to broadcast.\n"
-                                      "You can broadcast it later from the 'Broadcast' tab."));
+                                       "You can broadcast it later from the 'Broadcast' tab."));
         }
     } else {
         // Transaction is partially signed and needs more signatures
@@ -1400,7 +1439,7 @@ void MultisigDialog::signMultisigTx()
         } else {
             // User chose not to save, just show success message
             showInfo(tr("Success"), tr("Transaction partially signed.\n"
-                                      "You will need to share this transaction with other signers to complete it."));
+                                       "You will need to share this transaction with other signers to complete it."));
         }
     }
 }
@@ -1544,6 +1583,18 @@ void MultisigDialog::broadcastMultisigTx()
             tr("Failed to decode transaction."));
         return;
     }
+    
+    // Get the transaction hash
+    uint256 txHash = tx.GetHash();
+    
+    // Check if this transaction has already been broadcast
+    if (broadcastTransactions.find(txHash) != broadcastTransactions.end()) {
+        // Transaction has already been broadcast - completely block it
+        QMessageBox::critical(this, tr("Transaction Already Broadcast"),
+            tr("This transaction has already been broadcast.\n"
+               "To prevent double-spending issues, broadcasting the same transaction multiple times is not allowed."));
+        return;
+    }
 
     // Broadcast
     std::string strError;
@@ -1552,6 +1603,9 @@ void MultisigDialog::broadcastMultisigTx()
             tr("Failed to broadcast transaction: %1").arg(QString::fromStdString(strError)));
         return;
     }
+    
+    // Add to our set of broadcast transactions
+    broadcastTransactions.insert(txHash);
 
     showInfo(tr("Success"), tr("Transaction broadcast successfully."));
     ui->broadcastTransactionEdit->clear();
@@ -1593,6 +1647,9 @@ void MultisigDialog::loadMultisigInfoFromFile()
     // Handle both our custom format and importmulti format
     std::string redeemScriptHex;
     UniValue pubkeysVal;
+    std::vector<std::string> privateKeys;
+    bool watchOnly = true; // Default to watch-only
+    std::string address;
     
     if (jsonObj.isObject()) {
         // Our custom format
@@ -1614,6 +1671,31 @@ void MultisigDialog::loadMultisigInfoFromFile()
         
         // Get pubkeys
         pubkeysVal = find_value(firstItem, "pubkeys");
+        
+        // Get address from scriptPubKey if available
+        UniValue scriptPubKeyVal = find_value(firstItem, "scriptPubKey");
+        if (scriptPubKeyVal.isObject()) {
+            UniValue addressVal = find_value(scriptPubKeyVal, "address");
+            if (addressVal.isStr()) {
+                address = addressVal.get_str();
+            }
+        }
+        
+        // Get private keys if available
+        UniValue keysVal = find_value(firstItem, "keys");
+        if (keysVal.isArray() && keysVal.size() > 0) {
+            for (size_t i = 0; i < keysVal.size(); i++) {
+                if (keysVal[i].isStr()) {
+                    privateKeys.push_back(keysVal[i].get_str());
+                }
+            }
+        }
+        
+        // Check watchonly flag
+        UniValue watchOnlyVal = find_value(firstItem, "watchonly");
+        if (watchOnlyVal.isBool()) {
+            watchOnly = watchOnlyVal.get_bool();
+        }
     }
     
     // Validate we have the required data
@@ -1630,7 +1712,7 @@ void MultisigDialog::loadMultisigInfoFromFile()
         return;
     }
     
-    // Check if we have any of the private keys for this multisig address
+    // Extract pubkeys from the JSON
     std::vector<CPubKey> pubkeys;
     for (size_t i = 0; i < pubkeysVal.size(); i++) {
         if (!pubkeysVal[i].isStr())
@@ -1648,48 +1730,72 @@ void MultisigDialog::loadMultisigInfoFromFile()
     std::vector<unsigned char> scriptData = ParseHex(redeemScriptHex);
     CScript redeemScript(scriptData.begin(), scriptData.end());
     
-    // Check if we have any of the private keys without importing
-    bool hasPrivKey = hasPrivateKey(pubkeys);
-    
-    // Show a message to the user based on whether we have private keys
-    if (hasPrivKey) {
-        // We have at least one private key, import with signing capability
-        bool importedAsReadOnly = false; // We know we have private keys, so it won't be read-only
-        if (!model->importMultisigAddress(redeemScript, pubkeys, importedAsReadOnly)) {
-            showError(tr("Error"), tr("Failed to import multisig wallet."));
-            return;
-        }
-        
-        // Show success message
-        showInfo(tr("Success"), tr("Multisig wallet imported successfully with signing capability."));
-    } else {
-        // No private keys found, ask if user wants to import as read-only
-        if (QMessageBox::question(this, tr("No Private Keys Found"),
-                                tr("None of the private keys for this multisig wallet were found in your wallet. Do you want to import it as read-only?"),
-                                QMessageBox::Yes | QMessageBox::No) != QMessageBox::Yes) {
-            return;
-        }
-        
-        // Import as read-only
-        if (!model->addMultisigAddress(redeemScript)) {
-            showError(tr("Error"), tr("Failed to import multisig wallet."));
-            return;
-        }
-        
-        // Show success message
-        showInfo(tr("Success"), tr("Multisig wallet imported successfully as read-only."));
-    }
-    
-    // Create P2SH address from redeem script and display it
+    // Display address information
     CScriptID scriptID = CScriptID(redeemScript);
     CBitcoinAddress multisigAddress;
     multisigAddress.Set(scriptID);
-    if (multisigAddress.IsValid()) {
-        // Switch to the Create tab to show the address and redeem script
-        ui->tabWidget->setCurrentIndex(0);
-        ui->multisigAddress->setText(QString::fromStdString(multisigAddress.ToString()));
-        ui->redeemScript->setText(QString::fromStdString(redeemScriptHex));
+    
+    if (!multisigAddress.IsValid()) {
+        showError(tr("Error"), tr("Invalid redeem script."));
+        return;
     }
+    
+    // Verify the address matches if one was provided
+    if (!address.empty() && address != multisigAddress.ToString()) {
+        showError(tr("Error"), tr("Address in file does not match the calculated address from redeem script."));
+        return;
+    }
+    
+    bool importSuccess = false;
+    bool importedAsReadOnly = true;
+    
+    // If we have private keys in the file and watchOnly is false, import them
+    if (!privateKeys.empty() && !watchOnly) {
+        // Import with private keys
+        if (model->importMultisigAddressWithKeys(redeemScript, pubkeys, privateKeys, importedAsReadOnly)) {
+            importSuccess = true;
+        }
+    } else {
+        // Check if we already have any of the private keys without importing
+        bool hasPrivKey = hasPrivateKey(pubkeys);
+        
+        if (hasPrivKey) {
+            // We have at least one private key, import with signing capability
+            if (model->importMultisigAddress(redeemScript, pubkeys, importedAsReadOnly)) {
+                importSuccess = true;
+            }
+        } else {
+            // No private keys found, ask if user wants to import as read-only
+            if (QMessageBox::question(this, tr("No Private Keys Found"),
+                                    tr("None of the private keys for this multisig wallet were found in your wallet. Do you want to import it as read-only?"),
+                                    QMessageBox::Yes | QMessageBox::No) != QMessageBox::Yes) {
+                return;
+            }
+            
+            // Import as read-only
+            if (model->addMultisigAddress(redeemScript)) {
+                importSuccess = true;
+                importedAsReadOnly = true;
+            }
+        }
+    }
+    
+    if (!importSuccess) {
+        showError(tr("Error"), tr("Failed to import multisig wallet."));
+        return;
+    }
+    
+    // Show success message
+    if (importedAsReadOnly) {
+        showInfo(tr("Success"), tr("Multisig wallet imported successfully as read-only."));
+    } else {
+        showInfo(tr("Success"), tr("Multisig wallet imported successfully with signing capability."));
+    }
+    
+    // Switch to the Create tab to show the address and redeem script
+    ui->tabWidget->setCurrentIndex(0);
+    ui->multisigAddress->setText(QString::fromStdString(multisigAddress.ToString()));
+    ui->redeemScript->setText(QString::fromStdString(redeemScriptHex));
 }
 
 bool MultisigDialog::saveMultisigInfoForSharing(const CScript& redeemScript, const std::vector<CPubKey>& pubkeys, int required)

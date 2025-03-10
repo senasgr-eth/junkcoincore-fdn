@@ -75,6 +75,7 @@ private:
     Mode currentMode;
     QMap<QString, WalletModel*> mapWalletModels;
     CMutableTransaction currentTransaction; // Store the current transaction
+    std::set<uint256> broadcastTransactions; // Set of transaction hashes that have been broadcast
 
     bool createRedeemScript(CScript& scriptRedeem, QString& strErrorMsg);
     bool importRedeemScript(const QString& strScriptHex, QString& strErrorMsg);
