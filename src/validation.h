@@ -351,21 +351,6 @@ ThresholdState VersionBitsTipState(const Consensus::Params& params, Consensus::D
 /** Get the block height at which the BIP9 deployment switched into the state for the block building on the current tip. */
 int VersionBitsTipStateSinceHeight(const Consensus::Params& params, Consensus::DeploymentPos pos);
 
-/** Check if BIP34 has activated. */
-bool IsBIP34Enabled(const CBlockIndex* pindexPrev, const Consensus::Params& params);
-
-/** Check if BIP66 has activated. */
-bool IsBIP66Enabled(const CBlockIndex* pindexPrev, const Consensus::Params& params);
-
-/** Check if BIP65 has activated. */
-bool IsBIP65Enabled(const CBlockIndex* pindexPrev, const Consensus::Params& params);
-
-/** Check if CSV (BIP68, BIP112, and BIP113) has activated. */
-bool IsCSVEnabled(const CBlockIndex* pindexPrev, const Consensus::Params& params);
-
-/** Check if Segregated Witness (BIP141, BIP143, and BIP147) has activated. */
-bool IsWitnessEnabled(const CBlockIndex* pindexPrev, const Consensus::Params& params);
-
 /** 
  * Count ECDSA signature operations the old-fashioned (pre-0.6) way
  * @return number of sigops this transaction's outputs will produce when spent

@@ -1746,46 +1746,6 @@ void ThreadScriptCheck() {
 // Protected by cs_main
 VersionBitsCache versionbitscache;
 
-// Check if BIP34 has activated based on block height
-bool IsBIP34Enabled(const CBlockIndex* pindexPrev, const Consensus::Params& params) {
-    if (pindexPrev == nullptr) {
-        return false;
-    }
-    return pindexPrev->nHeight >= params.BIP34Height;
-}
-
-// Check if BIP66 has activated based on block height
-bool IsBIP66Enabled(const CBlockIndex* pindexPrev, const Consensus::Params& params) {
-    if (pindexPrev == nullptr) {
-        return false;
-    }
-    return pindexPrev->nHeight >= params.BIP66Height;
-}
-
-// Check if BIP65 has activated based on block height
-bool IsBIP65Enabled(const CBlockIndex* pindexPrev, const Consensus::Params& params) {
-    if (pindexPrev == nullptr) {
-        return false;
-    }
-    return pindexPrev->nHeight >= params.BIP65Height;
-}
-
-// Check if CSV (BIP68, BIP112, and BIP113) has activated based on block height
-bool IsCSVEnabled(const CBlockIndex* pindexPrev, const Consensus::Params& params) {
-    if (pindexPrev == nullptr) {
-        return false;
-    }
-    return pindexPrev->nHeight >= params.CSVHeight;
-}
-
-// Check if Segregated Witness (BIP141, BIP143, and BIP147) has activated based on block height
-bool IsWitnessEnabled(const CBlockIndex* pindexPrev, const Consensus::Params& params) {
-    if (pindexPrev == nullptr) {
-        return false;
-    }
-    return pindexPrev->nHeight >= params.SegwitHeight;
-}
-
 int32_t ComputeBlockVersion(const CBlockIndex* pindexPrev, const Consensus::Params& params)
 {
     LOCK(cs_main);
@@ -1814,8 +1774,6 @@ public:
 
     int64_t BeginTime(const Consensus::Params& params) const { return 0; }
     int64_t EndTime(const Consensus::Params& params) const { return std::numeric_limits<int64_t>::max(); }
-    int32_t BeginHeight(const Consensus::Params& params) const { return 0; }
-    int32_t EndHeight(const Consensus::Params& params) const { return std::numeric_limits<int32_t>::max(); }
     int Period(const Consensus::Params& params) const { return params.nMinerConfirmationWindow; }
     int Threshold(const Consensus::Params& params) const { return params.nRuleChangeActivationThreshold; }
 
@@ -1932,12 +1890,19 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     // before the first had been spent.  Since those coinbases are sufficiently buried its no longer possible to create further
     // duplicate transactions descending from the known pairs either.
     // If we're on the known chain at height greater than where BIP34 activated, we can save the db accesses needed for the BIP30 check.
-    // Use the new IsBIP34Enabled helper function to check if BIP34 is active
-    fEnforceBIP30 = fEnforceBIP30 && !IsBIP34Enabled(pindex->pprev, consensus);
+    CBlockIndex *pindexBIP34height = pindex->pprev->GetAncestor(chainparams.GetConsensus(0).BIP34Height);
+    //Only continue to enforce if we're below BIP34 activation height or the block hash at that height doesn't correspond.
+    
+    //fEnforceBIP30 = fEnforceBIP30 && (!pindexBIP34height); // || !(pindexBIP34height->GetBlockHash() == chainparams.GetConsensus(0).BIP34Hash)
+    
+    ThresholdState stateBip34 = VersionBitsState(pindex->pprev, consensus, Consensus::DEPLOYMENT_BIP34, versionbitscache);
+    fEnforceBIP30 = fEnforceBIP30 && (stateBip34 == THRESHOLD_ACTIVE || stateBip34 == THRESHOLD_STARTED);
     // we do not know the target hash just yet.
 
     if(!fEnforceBIP30) {
-        LogPrint("bench", "BIP34 is active, disabling BIP30 enforcement\n");
+        std::string hash = pindexBIP34height->GetBlockHash().ToString();
+
+        LogPrint("bench", "Calculated BIP34 hash: " + hash + "\n");
     }
 
     if (fEnforceBIP30) {
@@ -1955,15 +1920,21 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
 
     unsigned int flags = fStrictPayToScriptHash ? SCRIPT_VERIFY_P2SH : SCRIPT_VERIFY_NONE;
 
-    // BIP65 and BIP66 activation checks
+    // BIP65 BIP66 deployments
+
+    ThresholdState stateBip65 = VersionBitsState(pindex->pprev, consensus, Consensus::DEPLOYMENT_BIP66, versionbitscache);
+    ThresholdState stateBip66 = VersionBitsState(pindex->pprev, consensus, Consensus::DEPLOYMENT_BIP65, versionbitscache);
+
 
     // Start enforcing the DERSIG (BIP66) rule
-    if (IsBIP66Enabled(pindex->pprev, consensus)) {
+    // if (pindex->nHeight >= chainparams.GetConsensus(0).BIP66Height) {
+    if (stateBip66 == THRESHOLD_ACTIVE || stateBip66 == THRESHOLD_STARTED) {
         flags |= SCRIPT_VERIFY_DERSIG;
     }
 
-    // Start enforcing CHECKLOCKTIMEVERIFY (BIP65) for block.nVersion=4 blocks
-    if (IsBIP65Enabled(pindex->pprev, consensus)) {
+    // Start enforcing CHECKLOCKTIMEVERIFY, (BIP65) for block.nVersion=4 blocks
+    // if (pindex->nHeight >= chainparams.GetConsensus(0).BIP65Height) {
+    if (stateBip65 == THRESHOLD_ACTIVE || stateBip65 == THRESHOLD_STARTED) {
         flags |= SCRIPT_VERIFY_CHECKLOCKTIMEVERIFY;
     }
 
@@ -3080,7 +3051,11 @@ static bool CheckIndexAgainstCheckpoint(const CBlockIndex* pindexPrev, CValidati
     return true;
 }
 
-
+bool IsWitnessEnabled(const CBlockIndex* pindexPrev, const Consensus::Params& params)
+{
+    LOCK(cs_main);
+    return (VersionBitsState(pindexPrev, params, Consensus::DEPLOYMENT_SEGWIT, versionbitscache) == THRESHOLD_ACTIVE);
+}
 
 // Compute at which vout of the block's coinbase transaction the witness
 // commitment occurs, or -1 if not found.

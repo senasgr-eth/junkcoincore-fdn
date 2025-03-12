@@ -32,14 +32,10 @@ enum DeploymentPos
 struct BIP9Deployment {
     /** Bit position to select the particular bit in nVersion. */
     int bit;
-    /** Start height for version bits miner confirmation. */
-    int32_t nStartHeight;
-    /** Timeout/expiry height for the deployment attempt. */
-    int32_t nTimeout;
     /** Start MedianTime for version bits miner confirmation. Can be a date in the past */
     int64_t nStartTime;
     /** Timeout/expiry MedianTime for the deployment attempt. */
-    int64_t nTimeTimeout;
+    int64_t nTimeout;
 };
 
 /**
@@ -59,10 +55,6 @@ struct Params {
     int BIP65Height;
     /** Block height at which BIP66 becomes active */
     int BIP66Height;
-    /** Block height at which CSV (BIP68, BIP112, and BIP113) becomes active */
-    int CSVHeight;
-    /** Block height at which SegWit (BIP141, BIP143, and BIP147) becomes active */
-    int SegwitHeight;
     /**
      * Minimum blocks including miner confirmation of the total of 2016 blocks in a retargeting period,
      * (nPowTargetTimespan / nPowTargetSpacing) which is also used for BIP9 deployments.

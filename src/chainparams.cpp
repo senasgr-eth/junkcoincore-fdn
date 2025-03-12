@@ -76,17 +76,15 @@ public:
     CMainParams() {
         strNetworkID = "main";
 
-        // Not used in JunkCoin - Junkcoin uses fixed reward schedule by height instead of halvings
-        //consensus.nSubsidyHalvingInterval = 100000;
+        // Not used in JunkCoin
+        consensus.nSubsidyHalvingInterval = 100000;
 
-        // These majority-based parameters are not used with height-based activation
-        //consensus.nMajorityEnforceBlockUpgrade = 1500;
-        //consensus.nMajorityRejectBlockOutdated = 1900;
-        //consensus.nMajorityWindow = 2000;
+        consensus.nMajorityEnforceBlockUpgrade = 1500;
+        consensus.nMajorityRejectBlockOutdated = 1900;
+        consensus.nMajorityWindow = 2000;
 
         // After deployments are activated we can change it
-        // BIP34Hash is not used with height-based activation
-        //consensus.BIP34Hash = uint256S("0xa2effa738145e377e08a61d76179c21703e13e48910b30a2a87f0dfe794b64c6"); //genesis
+        consensus.BIP34Hash = uint256S("0xa2effa738145e377e08a61d76179c21703e13e48910b30a2a87f0dfe794b64c6"); //genesis
         consensus.BIP65Height = 0x210c; //set
         consensus.BIP66Height = 0x210c;
 
@@ -103,46 +101,28 @@ public:
         consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].nStartTime = 1199145601; // January 1, 2008
         consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].nTimeout = 1230767999; // December 31, 2008
 
-        // BIP34 is not currently enforced, will activate at height 400000
         consensus.vDeployments[Consensus::DEPLOYMENT_BIP34].bit = 0;
-        consensus.vDeployments[Consensus::DEPLOYMENT_BIP34].nStartHeight = 400000; // Activation height
-        consensus.vDeployments[Consensus::DEPLOYMENT_BIP34].nTimeout = 410080; // One week (10080 blocks) after start height
+        consensus.vDeployments[Consensus::DEPLOYMENT_BIP34].nStartTime = 1534490155;   // 2023-12-25 00:00:00
+        consensus.vDeployments[Consensus::DEPLOYMENT_BIP34].nTimeout   = 1764490155;   // 2024-12-25 00:00:00
 
-        // BIP66 is not currently enforced, will activate at height 400000
         consensus.vDeployments[Consensus::DEPLOYMENT_BIP66].bit = 1;
-        consensus.vDeployments[Consensus::DEPLOYMENT_BIP66].nStartHeight = 400000; // Activation height
-        consensus.vDeployments[Consensus::DEPLOYMENT_BIP66].nTimeout = 410080; // One week (10080 blocks) after start height
+        consensus.vDeployments[Consensus::DEPLOYMENT_BIP66].nStartTime = 1534490155;   // 2023-12-25 00:00:00
+        consensus.vDeployments[Consensus::DEPLOYMENT_BIP66].nTimeout   = 1764490155;   // 2024-12-25 18:00:00
 
-        // BIP65 is already enforced, but we'll formalize it with height-based activation
-        // to maintain consistency with other BIPs
         consensus.vDeployments[Consensus::DEPLOYMENT_BIP65].bit = 2;
-        consensus.vDeployments[Consensus::DEPLOYMENT_BIP65].nStartHeight = 1; // Already active, set to height 1
-        consensus.vDeployments[Consensus::DEPLOYMENT_BIP65].nTimeout = 410080; // Keep timeout consistent
-        
-        // Set the activation heights in the consensus parameters
-        consensus.BIP34Height = 400000;
-        consensus.BIP66Height = 400000;
-        consensus.BIP65Height = 1; // Already active
-        consensus.CSVHeight = 400000;
-        consensus.SegwitHeight = 400000;
+        consensus.vDeployments[Consensus::DEPLOYMENT_BIP65].nStartTime = 1534490155;   // 2023-12-25 00:00:00
+        consensus.vDeployments[Consensus::DEPLOYMENT_BIP65].nTimeout   = 1764490155;   // 2024-12-25 18:00:00
 
         // Deployment of BIP68, BIP112, and BIP113.
-        // CSV is currently in 'started' state with miner signaling
+        // XXX: BIP heights and hashes all need to be updated to JunkCoin values
         consensus.vDeployments[Consensus::DEPLOYMENT_CSV].bit = 3;
-        consensus.vDeployments[Consensus::DEPLOYMENT_CSV].nStartHeight = 400000; // Activation height
-        consensus.vDeployments[Consensus::DEPLOYMENT_CSV].nTimeout = 410080; // One week (10080 blocks) after start height
-        // Keep the existing time-based parameters to maintain backward compatibility until height activation
-        consensus.vDeployments[Consensus::DEPLOYMENT_CSV].nStartTime = 1724732207; // Current startTime
-        consensus.vDeployments[Consensus::DEPLOYMENT_CSV].nTimeTimeout = 1764490155; // Current timeout
+        consensus.vDeployments[Consensus::DEPLOYMENT_CSV].nStartTime = 1724732207; // 2023-12-25 00:00:00
+        consensus.vDeployments[Consensus::DEPLOYMENT_CSV].nTimeout = 1764490155;   // 2024-12-25 18:00:00
 
         // Deployment of SegWit (BIP141, BIP143, and BIP147)
-        // SegWit is currently in 'started' state with miner signaling
         consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].bit = 4;
-        consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].nStartHeight = 400000; // Mainnet activation height
-        consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].nTimeout = 410080; // One week (10080 blocks) after start height
-        // Keep the existing time-based parameters to maintain backward compatibility until height activation
-        consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].nStartTime = 1724732207; // Current startTime
-        consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].nTimeTimeout = 1764490155; // Current timeout
+        consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].nStartTime = 1724732207; // 2023-12-25 00:00:00
+        consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].nTimeout = 1764490155;   // 2024-12-25 18:00:00
 
         // The best chain should have at least this much work.
         consensus.nMinimumChainWork = uint256S("0x0000000000000000000000000000000000000000000000000000000000000000"); // 4,303,965
@@ -158,22 +138,17 @@ public:
 
         //consensus.fAllowLegacyBlocks = true;
 
-        // Digishield: Advanced difficulty adjustment algorithm
-        // Currently not activated in this consensus but prepared for future activation
-        // The implementation is complete but set to activate at a very high block height (effectively never)
-        // This can be activated in the future by setting a specific activation height
+        // We do not activate digishield in this consensus
         digishieldConsensus = consensus;
 
-        digishieldConsensus.nHeightEffective = 0xFFFFFFFF; // Set to maximum value (effectively never activate)
+        digishieldConsensus.nHeightEffective = 0xFFFFFFFF; // like never
 
         digishieldConsensus.fSimplifiedRewards = true;
         digishieldConsensus.fDigishieldDifficultyCalculation = true;
         digishieldConsensus.nPowTargetTimespan = 60; // post-digishield: 1 minute
         digishieldConsensus.nCoinbaseMaturity = 70;
 
-        // Digishield minimum difficulty blocks configuration
-        // This allows minimum difficulty blocks during Digishield activation
-        // Will be effective once Digishield is activated in the future
+        // Not implementing digishield yet
         minDifficultyConsensus = digishieldConsensus;
         minDifficultyConsensus.nHeightEffective = std::numeric_limits<uint32_t>::max();;
         minDifficultyConsensus.fPowAllowDigishieldMinDifficultyBlocks = true;
@@ -220,7 +195,7 @@ public:
         base58Prefixes[EXT_PUBLIC_KEY] = boost::assign::list_of(0x04)(0x88)(0xB2)(0x1E).convert_to_container<std::vector<unsigned char> >();
         base58Prefixes[EXT_SECRET_KEY] = boost::assign::list_of(0x04)(0x88)(0xAD)(0xE4).convert_to_container<std::vector<unsigned char> >();
 
-        bech32_hrp = "jc";   // SegWit addresses start with 'jc1q'
+        //bech32_hrp = "jc";   // SegWit addresses start with 'jc1q'
 
         vFixedSeeds = std::vector<SeedSpec6>(pnSeed6_main, pnSeed6_main + ARRAYLEN(pnSeed6_main));
 
@@ -300,23 +275,18 @@ public:
     CTestNetParams() {
         strNetworkID = "test";
 
-        // Not used in JunkCoin - Junkcoin uses fixed reward schedule by height instead of halvings
-        //consensus.nSubsidyHalvingInterval = 100000;
+        consensus.nSubsidyHalvingInterval = 100000;
 
-        // These majority-based parameters are not used with height-based activation
-        //consensus.nMajorityEnforceBlockUpgrade = 1500;
-        //consensus.nMajorityRejectBlockOutdated = 1900;
-        //consensus.nMajorityWindow = 2000;
+        consensus.nMajorityEnforceBlockUpgrade = 1500;
+        consensus.nMajorityRejectBlockOutdated = 1900;
+        consensus.nMajorityWindow = 2000;
 
 
         // After deployments are activated we can change it
-        // BIP34Hash is not used with height-based activation
-        //consensus.BIP34Hash = uint256S("0x00"); // unused for now.
-        consensus.BIP34Height = 100000;
-        consensus.BIP65Height = 100000;
-        consensus.BIP66Height = 100000;
-        consensus.CSVHeight = 100000;
-        consensus.SegwitHeight = 100000;
+        consensus.BIP34Hash = uint256S("0x00"); // unused for now.
+        consensus.BIP65Height = 99999999;
+        consensus.BIP65Height = 99999999;
+        consensus.BIP66Height = 99999999;
 
 
         consensus.powLimit = uint256S("0x00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"); // ~uint256(0) >> 20;
@@ -334,36 +304,29 @@ public:
         consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].nTimeout = 1230767999; // December 31, 2008
 
         consensus.vDeployments[Consensus::DEPLOYMENT_BIP34].bit = 0;
-        consensus.vDeployments[Consensus::DEPLOYMENT_BIP34].nStartHeight = 100000; // Same activation height as SegWit
-        consensus.vDeployments[Consensus::DEPLOYMENT_BIP34].nTimeout = 110080; // One week (10080 blocks) after start height
+        consensus.vDeployments[Consensus::DEPLOYMENT_BIP34].nStartTime = 1703462400;   // 2023-12-25 00:00:00
+        consensus.vDeployments[Consensus::DEPLOYMENT_BIP34].nTimeout   = 1735084800;   // 2024-12-25 00:00:00
 
         consensus.vDeployments[Consensus::DEPLOYMENT_BIP66].bit = 1;
-        consensus.vDeployments[Consensus::DEPLOYMENT_BIP66].nStartHeight = 100000; // Same activation height as SegWit
-        consensus.vDeployments[Consensus::DEPLOYMENT_BIP66].nTimeout = 110080; // One week (10080 blocks) after start height
+        consensus.vDeployments[Consensus::DEPLOYMENT_BIP66].nStartTime = 1703462400;   // 2023-12-25 00:00:00
+        consensus.vDeployments[Consensus::DEPLOYMENT_BIP66].nTimeout   = 1735084800;   // 2024-12-25 18:00:00
 
 
         consensus.vDeployments[Consensus::DEPLOYMENT_BIP65].bit = 2;
-        consensus.vDeployments[Consensus::DEPLOYMENT_BIP65].nStartHeight = 100000; // Same activation height as SegWit
-        consensus.vDeployments[Consensus::DEPLOYMENT_BIP65].nTimeout = 110080; // One week (10080 blocks) after start height
+        consensus.vDeployments[Consensus::DEPLOYMENT_BIP65].nStartTime = 1703462400;   // 2023-12-25 00:00:00
+        consensus.vDeployments[Consensus::DEPLOYMENT_BIP65].nTimeout   = 1735084800;   // 2024-12-25 18:00:00
 
 
         // Deployment of BIP68, BIP112, and BIP113.
-        // CSV is currently in 'started' state with miner signaling on testnet
+        // XXX: BIP heights and hashes all need to be updated to JunkCoin values
         consensus.vDeployments[Consensus::DEPLOYMENT_CSV].bit = 3;
-        consensus.vDeployments[Consensus::DEPLOYMENT_CSV].nStartHeight = 100000; // Testnet activation height
-        consensus.vDeployments[Consensus::DEPLOYMENT_CSV].nTimeout = 110080; // One week (10080 blocks) after start height
-        // Keep the existing time-based parameters to maintain backward compatibility until height activation
-        consensus.vDeployments[Consensus::DEPLOYMENT_CSV].nStartTime = 1724732207; // Current startTime
-        consensus.vDeployments[Consensus::DEPLOYMENT_CSV].nTimeTimeout = 1764490155; // Current timeout
+        consensus.vDeployments[Consensus::DEPLOYMENT_CSV].nStartTime = 1703462400; // 2023-12-25 00:00:00
+        consensus.vDeployments[Consensus::DEPLOYMENT_CSV].nTimeout = 1735084800;   // 2024-12-25 18:00:00
 
         // Deployment of SegWit (BIP141, BIP143, and BIP147)
-        // SegWit is currently in 'started' state with miner signaling on testnet
         consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].bit = 4;
-        consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].nStartHeight = 100000; // Testnet activation height
-        consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].nTimeout = 110080; // One week (10080 blocks) after start height
-        // Keep the existing time-based parameters to maintain backward compatibility until height activation
-        consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].nStartTime = 1724732207; // Current startTime
-        consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].nTimeTimeout = 1764490155; // Current timeout
+        consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].nStartTime = 1703462400; // 2023-12-25 00:00:00
+        consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].nTimeout = 1735084800;   // 2024-12-25 18:00:00
 
         // The best chain should have at least this much work.
         consensus.nMinimumChainWork = uint256S("0x0000000000000000000000000000000000000000000000000000000000000000"); // 4,303,965
@@ -378,22 +341,17 @@ public:
         consensus.nBlockAfterAuxpowRewardThreshold = 5;
         consensus.fStrictChainId = true;
 
-        // Digishield: Advanced difficulty adjustment algorithm
-        // Currently not activated in this consensus but prepared for future activation
-        // The implementation is complete but set to activate at a very high block height (effectively never)
-        // This can be activated in the future by setting a specific activation height
+        // We do not activate digishield in this consensus
         digishieldConsensus = consensus;
 
-        digishieldConsensus.nHeightEffective = 0xFFFFFFFF; // Set to maximum value (effectively never activate)
+        digishieldConsensus.nHeightEffective = 0xFFFFFFFF; // like never
 
         digishieldConsensus.fSimplifiedRewards = true;
         digishieldConsensus.fDigishieldDifficultyCalculation = true;
         digishieldConsensus.nPowTargetTimespan = 60; // post-digishield: 1 minute
         digishieldConsensus.nCoinbaseMaturity = 240;
 
-        // Digishield minimum difficulty blocks configuration
-        // This allows minimum difficulty blocks during Digishield activation
-        // Will be effective once Digishield is activated in the future
+        // Not implementing digishield yet
         minDifficultyConsensus = digishieldConsensus;
         minDifficultyConsensus.nHeightEffective = std::numeric_limits<uint32_t>::max();;
         minDifficultyConsensus.fPowAllowDigishieldMinDifficultyBlocks = true;
@@ -490,23 +448,19 @@ private:
 public:
     CRegTestParams() {
         strNetworkID = "regtest";
-        // Not used in JunkCoin - Junkcoin uses fixed reward schedule by height instead of halvings
-        //consensus.nSubsidyHalvingInterval = 100000;
+        // Not used in JunkCoin
+        consensus.nSubsidyHalvingInterval = 100000;
 
-        // These majority-based parameters are not used with height-based activation
-        //consensus.nMajorityEnforceBlockUpgrade = 1500;
-        //consensus.nMajorityRejectBlockOutdated = 1900;
-        //consensus.nMajorityWindow = 2000;
+        consensus.nMajorityEnforceBlockUpgrade = 1500;
+        consensus.nMajorityRejectBlockOutdated = 1900;
+        consensus.nMajorityWindow = 2000;
 
 
         // After deployments are activated we can change it
-        // BIP34Hash is not used with height-based activation
-        //consensus.BIP34Hash = uint256S("0x00"); // unused for now.
-        consensus.BIP34Height = 100000;
-        consensus.BIP65Height = 100000;
-        consensus.BIP66Height = 100000;
-        consensus.CSVHeight = 100000;
-        consensus.SegwitHeight = 100000;
+        consensus.BIP34Hash = uint256S("0x00"); // unused for now.
+        consensus.BIP65Height = 99999999;
+        consensus.BIP65Height = 99999999;
+        consensus.BIP66Height = 99999999;
 
 
         consensus.powLimit = uint256S("0x00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"); // ~uint256(0) >> 20;
@@ -524,29 +478,29 @@ public:
         consensus.vDeployments[Consensus::DEPLOYMENT_TESTDUMMY].nTimeout = 1230767999; // December 31, 2008
 
         consensus.vDeployments[Consensus::DEPLOYMENT_BIP34].bit = 0;
-        consensus.vDeployments[Consensus::DEPLOYMENT_BIP34].nStartHeight = 100; // Same activation height as SegWit
-        consensus.vDeployments[Consensus::DEPLOYMENT_BIP34].nTimeout = 110080; // One week (10080 blocks) after start height
+        consensus.vDeployments[Consensus::DEPLOYMENT_BIP34].nStartTime = 1703462400;   // 2023-12-25 00:00:00
+        consensus.vDeployments[Consensus::DEPLOYMENT_BIP34].nTimeout   = 1735084800;   // 2024-12-25 00:00:00
 
         consensus.vDeployments[Consensus::DEPLOYMENT_BIP66].bit = 1;
-        consensus.vDeployments[Consensus::DEPLOYMENT_BIP66].nStartHeight = 100; // Same activation height as SegWit
-        consensus.vDeployments[Consensus::DEPLOYMENT_BIP66].nTimeout = 110080; // One week (10080 blocks) after start height
+        consensus.vDeployments[Consensus::DEPLOYMENT_BIP66].nStartTime = 1703462400;   // 2023-12-25 00:00:00
+        consensus.vDeployments[Consensus::DEPLOYMENT_BIP66].nTimeout   = 1735084800;   // 2024-12-25 18:00:00
 
 
         consensus.vDeployments[Consensus::DEPLOYMENT_BIP65].bit = 2;
-        consensus.vDeployments[Consensus::DEPLOYMENT_BIP65].nStartHeight = 100; // Same activation height as SegWit
-        consensus.vDeployments[Consensus::DEPLOYMENT_BIP65].nTimeout = 110080; // One week (10080 blocks) after start height
+        consensus.vDeployments[Consensus::DEPLOYMENT_BIP65].nStartTime = 1703462400;   // 2023-12-25 00:00:00
+        consensus.vDeployments[Consensus::DEPLOYMENT_BIP65].nTimeout   = 1735084800;   // 2024-12-25 18:00:00
 
 
         // Deployment of BIP68, BIP112, and BIP113.
         // XXX: BIP heights and hashes all need to be updated to JunkCoin values
         consensus.vDeployments[Consensus::DEPLOYMENT_CSV].bit = 3;
-        consensus.vDeployments[Consensus::DEPLOYMENT_CSV].nStartHeight = 100; // Regtest activation height
-        consensus.vDeployments[Consensus::DEPLOYMENT_CSV].nTimeout = 999999999; // Far in the future
+        consensus.vDeployments[Consensus::DEPLOYMENT_CSV].nStartTime = 1703462400; // 2023-12-25 00:00:00
+        consensus.vDeployments[Consensus::DEPLOYMENT_CSV].nTimeout = 1735084800;   // 2024-12-25 18:00:00
 
         // Deployment of SegWit (BIP141, BIP143, and BIP147)
         consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].bit = 4;
-        consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].nStartHeight = 100; // Regtest activation height
-        consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].nTimeout = 999999999; // Far in the future
+        consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].nStartTime = 1703462400; // 2023-12-25 00:00:00
+        consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].nTimeout = 1735084800;   // 2024-12-25 18:00:00
 
         // The best chain should have at least this much work.
         consensus.nMinimumChainWork = uint256S("0x000000000000000000000000000000000000000000000000003e3c33bc605e5d"); // 4,303,965
@@ -560,22 +514,17 @@ public:
         consensus.nBlockAfterAuxpowRewardThreshold = 5;
         consensus.fStrictChainId = true;
 
-        // Digishield: Advanced difficulty adjustment algorithm
-        // Currently not activated in this consensus but prepared for future activation
-        // The implementation is complete but set to activate at a very high block height (effectively never)
-        // This can be activated in the future by setting a specific activation height
+        // We do not activate digishield in this consensus
         digishieldConsensus = consensus;
 
-        digishieldConsensus.nHeightEffective = 0xFFFFFFFF; // Set to maximum value (effectively never activate)
+        digishieldConsensus.nHeightEffective = 0xFFFFFFFF; // like never
 
         digishieldConsensus.fSimplifiedRewards = true;
         digishieldConsensus.fDigishieldDifficultyCalculation = true;
         digishieldConsensus.nPowTargetTimespan = 60; // post-digishield: 1 minute
         digishieldConsensus.nCoinbaseMaturity = 240;
 
-        // Digishield minimum difficulty blocks configuration
-        // This allows minimum difficulty blocks during Digishield activation
-        // Will be effective once Digishield is activated in the future
+        // Not implementing digishield yet
         minDifficultyConsensus = digishieldConsensus;
         minDifficultyConsensus.nHeightEffective = std::numeric_limits<uint32_t>::max();;
         minDifficultyConsensus.fPowAllowDigishieldMinDifficultyBlocks = true;

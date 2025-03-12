@@ -37,13 +37,8 @@ ThresholdState AbstractThresholdConditionChecker::GetStateFor(const CBlockIndex*
 {
     int nPeriod = Period(params);
     int nThreshold = Threshold(params);
-    int32_t nHeightStart = BeginHeight(params);
-    int32_t nHeightTimeout = EndHeight(params);
     int64_t nTimeStart = BeginTime(params);
     int64_t nTimeTimeout = EndTime(params);
-
-    // If height-based activation is set (non-zero), prioritize it over time-based activation
-    bool useHeightActivation = (nHeightStart > 0);
 
     // A block's state is always the same as that of the first of its period, so it is computed based on a pindexPrev whose height equals a multiple of nPeriod - 1.
     if (pindexPrev != NULL) {
@@ -58,9 +53,8 @@ ThresholdState AbstractThresholdConditionChecker::GetStateFor(const CBlockIndex*
             cache[pindexPrev] = THRESHOLD_DEFINED;
             break;
         }
-        if ((useHeightActivation && pindexPrev->nHeight < nHeightStart) || 
-            (!useHeightActivation && pindexPrev->GetMedianTimePast() < nTimeStart)) {
-            // Optimization: don't recompute down further, as we know every earlier block will be before the start
+        if (pindexPrev->GetMedianTimePast() < nTimeStart) {
+            // Optimization: don't recompute down further, as we know every earlier block will be before the start time
             cache[pindexPrev] = THRESHOLD_DEFINED;
             break;
         }
@@ -80,34 +74,19 @@ ThresholdState AbstractThresholdConditionChecker::GetStateFor(const CBlockIndex*
 
         switch (state) {
             case THRESHOLD_DEFINED: {
-                // Check for timeout first
-                if ((useHeightActivation && pindexPrev->nHeight >= nHeightTimeout) ||
-                    (!useHeightActivation && pindexPrev->GetMedianTimePast() >= nTimeTimeout)) {
+                if (pindexPrev->GetMedianTimePast() >= nTimeTimeout) {
                     stateNext = THRESHOLD_FAILED;
-                } 
-                // If using height-based activation and we've reached the start height, go directly to LOCKED_IN
-                else if (useHeightActivation && pindexPrev->nHeight >= nHeightStart) {
-                    stateNext = THRESHOLD_LOCKED_IN;
-                } 
-                // Otherwise, if using time-based activation and we've reached the start time, go to STARTED
-                else if (!useHeightActivation && pindexPrev->GetMedianTimePast() >= nTimeStart) {
+                } else if (pindexPrev->GetMedianTimePast() >= nTimeStart) {
                     stateNext = THRESHOLD_STARTED;
                 }
                 break;
             }
             case THRESHOLD_STARTED: {
-                // Check for timeout first
-                if ((useHeightActivation && pindexPrev->nHeight >= nHeightTimeout) ||
-                    (!useHeightActivation && pindexPrev->GetMedianTimePast() >= nTimeTimeout)) {
+                if (pindexPrev->GetMedianTimePast() >= nTimeTimeout) {
                     stateNext = THRESHOLD_FAILED;
                     break;
                 }
-                // For height-based activation, check if we've reached the start height
-                if (useHeightActivation && pindexPrev->nHeight >= nHeightStart) {
-                    stateNext = THRESHOLD_LOCKED_IN;
-                    break;
-                }
-                // For time-based activation, we need to count miner signaling
+                // We need to count
                 const CBlockIndex* pindexCount = pindexPrev;
                 int count = 0;
                 for (int i = 0; i < nPeriod; i++) {
@@ -179,9 +158,7 @@ private:
 
 protected:
     int64_t BeginTime(const Consensus::Params& params) const { return params.vDeployments[id].nStartTime; }
-    int64_t EndTime(const Consensus::Params& params) const { return params.vDeployments[id].nTimeTimeout; }
-    int32_t BeginHeight(const Consensus::Params& params) const { return params.vDeployments[id].nStartHeight; }
-    int32_t EndHeight(const Consensus::Params& params) const { return params.vDeployments[id].nTimeout; }
+    int64_t EndTime(const Consensus::Params& params) const { return params.vDeployments[id].nTimeout; }
     int Period(const Consensus::Params& params) const { return params.nMinerConfirmationWindow; }
     int Threshold(const Consensus::Params& params) const { return params.nRuleChangeActivationThreshold; }
 
