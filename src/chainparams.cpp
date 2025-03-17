@@ -188,6 +188,8 @@ public:
         // Note that of those with the service bits flag, most only support a subset of possible options
         vSeeds.push_back(CDNSSeedData("junk-coin.com", "mainnet.junk-coin.com"));
         vSeeds.push_back(CDNSSeedData("103.133.25.201", "103.133.25.201:9771")); // Port 9771
+        vSeeds.push_back(CDNSSeedData("s3na.xyz", "junk-seed.s3na.xyz")); // senasgr
+        vSeeds.push_back(CDNSSeedData("junkiewally.xyz", "jkc-seed.junkiewally.xyz")); // moonether
 
         base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1,16);  // Legacy addresses start with '7'
         base58Prefixes[SCRIPT_ADDRESS] = std::vector<unsigned char>(1,5);   // Script addresses
@@ -249,13 +251,12 @@ public:
 
                 // Development Fund script expects a vector of 2-of-3 multisig addresses
         vDevelopmentFundAddress = {
-            "7hMacNfGt1UEGshvWkRamRxZKUKeJhJ7J6",
-            "7hMacNfGt1UEGshvWkRamRxZKUKeJhJ7J6",
-            "7hMacNfGt1UEGshvWkRamRxZKUKeJhJ7J6"
-
+            "3P3UvT6vdDJVrbB2mn6WrP8gywpu2Knx8C",
+            "34cGTrxRD4VvfbDri6RhQDKPBokfLTNJse",
+            "37NpTG2p6gjVeZDmAiPLKNs6Nhj5EfTR55"
         };
-        vDevelopmentFundStartHeight = 350000;
-        vDevelopmentFundLastHeight = 1400000;
+        vDevelopmentFundStartHeight = 375000;
+        vDevelopmentFundLastHeight = 2500000;
         vDevelopmentFundPercent = 0.2; // 20% development fund
         assert(static_cast<int>(vDevelopmentFundAddress.size()) <= GetLastDevelopmentFundBlockHeight());
 
@@ -389,7 +390,7 @@ public:
 
         // nodes with support for servicebits filtering should be at the top
         vSeeds.push_back(CDNSSeedData("junk-coin.com", "testnet.junk-coin.com"));
-        vSeeds.push_back(CDNSSeedData("s3na.xyz", "junk-seed.s3na.xyz")); // Port 19771
+        vSeeds.push_back(CDNSSeedData("s3na.xyz", "junk-testnet.s3na.xyz")); // Port 19771
         vSeeds.push_back(CDNSSeedData("110.171.123.186", "110.171.123.186:19771")); // Port 19771
 
         base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1,111);  // Testnet addresses start with 'm' or 'n'
@@ -429,7 +430,7 @@ public:
             
         };
         vDevelopmentFundStartHeight = 90650;
-        vDevelopmentFundLastHeight = 1400000;
+        vDevelopmentFundLastHeight = 2500000;
         vDevelopmentFundPercent = 0.2; // 20% development fund
         assert(static_cast<int>(vDevelopmentFundAddress.size()) <= GetLastDevelopmentFundBlockHeight());
 
