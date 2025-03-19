@@ -723,7 +723,7 @@ UniValue getblocktemplate(const JSONRPCRequest& request)
                     // Use basic address format without additional encode checking
                     o.push_back(CBitcoinAddress(addr).ToString());
                 }
-                entry.pushKV("developmentfundraddress", o);
+                entry.pushKV("developmentfundaddress", o);
             }
             // If not in active block range, no development fund info is included in the template
             entry.pushKV("required", true);
@@ -808,6 +808,8 @@ UniValue getblocktemplate(const JSONRPCRequest& request)
     if (coinbasetxn) {
         assert(txCoinbase.isObject());
         result.pushKV("coinbasetxn", txCoinbase);
+        result.pushKV("coinbaseaux", aux);
+        result.pushKV("coinbasevalue", (int64_t)(*pblock->vtx[0]).vout[0].nValue);
     } else {
         result.pushKV("coinbaseaux", aux);
         result.pushKV("coinbasevalue", (int64_t)(*pblock->vtx[0]).vout[0].nValue);
