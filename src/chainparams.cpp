@@ -255,8 +255,8 @@ public:
             "34cGTrxRD4VvfbDri6RhQDKPBokfLTNJse",
             "37NpTG2p6gjVeZDmAiPLKNs6Nhj5EfTR55"
         };
-        vDevelopmentFundStartHeight = 375000;
-        vDevelopmentFundLastHeight = 2500000;
+        vDevelopmentFundStartHeight = 365000;
+        vDevelopmentFundLastHeight = 3547800;
         vDevelopmentFundPercent = 0.2; // 20% development fund
         assert(static_cast<int>(vDevelopmentFundAddress.size()) <= GetLastDevelopmentFundBlockHeight());
 
@@ -430,7 +430,7 @@ public:
             
         };
         vDevelopmentFundStartHeight = 90650;
-        vDevelopmentFundLastHeight = 2500000;
+        vDevelopmentFundLastHeight = 3547800;
         vDevelopmentFundPercent = 0.2; // 20% development fund
         assert(static_cast<int>(vDevelopmentFundAddress.size()) <= GetLastDevelopmentFundBlockHeight());
 
