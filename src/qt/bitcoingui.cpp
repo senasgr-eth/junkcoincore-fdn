@@ -27,6 +27,7 @@
 #ifdef ENABLE_WALLET
 #include "walletframe.h"
 #include "walletmodel.h"
+#include "multisigdialog.h"
 #endif // ENABLE_WALLET
 
 #ifdef Q_OS_MAC
@@ -49,6 +50,7 @@
 #include <QFontDatabase>
 #include <QListWidget>
 #include <QMenuBar>
+#include <QGraphicsOpacityEffect>
 #include <QMessageBox>
 #include <QMimeData>
 #include <QProgressDialog>
@@ -130,7 +132,69 @@ BitcoinGUI::BitcoinGUI(const PlatformStyle *_platformStyle, const NetworkStyle *
     spinnerFrame(0),
     platformStyle(_platformStyle)
 {
-    GUIUtil::restoreWindowGeometry("nWindow", QSize(850, 550), this);
+    GUIUtil::restoreWindowGeometry("nWindow", QSize(750, 500), this);
+    // Set minimum size to allow for shrinking
+    setMinimumSize(600, 400);
+
+    // Create a semi-transparent background image for the main window
+    if (walletFrame) {
+        // Create a custom background widget that will be placed behind everything
+        QLabel* bgLabel = new QLabel(walletFrame);
+        bgLabel->setObjectName("backgroundLabel");
+        
+        // Load the image and make it semi-transparent
+        QPixmap originalPixmap(":/icons/wallet_bgcoin_small");
+        
+        // Set up the label to properly display the image
+        bgLabel->setPixmap(originalPixmap);
+        bgLabel->setAlignment(Qt::AlignCenter);
+        bgLabel->setScaledContents(false); // Don't scale the contents, we'll handle that manually
+        bgLabel->setAttribute(Qt::WA_TransparentForMouseEvents); // Let mouse events pass through
+        
+        // Set opacity for the label
+        QGraphicsOpacityEffect* effect = new QGraphicsOpacityEffect(bgLabel);
+        effect->setOpacity(0.3); // 30% opacity
+        bgLabel->setGraphicsEffect(effect);
+        
+        // Make sure it stays in the background
+        bgLabel->lower();
+        
+        // We need to handle resize events to keep the background properly sized
+        // Install an event filter on the walletFrame
+        class ResizeEventFilter : public QObject {
+        public:
+            ResizeEventFilter(QLabel* label, QObject* parent = nullptr) 
+                : QObject(parent), m_label(label) {}
+            
+            bool eventFilter(QObject* obj, QEvent* event) override {
+                if (event->type() == QEvent::Resize) {
+                    QResizeEvent* resizeEvent = static_cast<QResizeEvent*>(event);
+                    QSize newSize = resizeEvent->size();
+                    
+                    // Center the label in the available space
+                    m_label->setGeometry(0, 0, newSize.width(), newSize.height());
+                    
+                    // Scale the pixmap to fit the window while maintaining aspect ratio
+                    QPixmap originalPixmap(":/icons/wallet_bgcoin_small");
+                    QPixmap scaledPixmap = originalPixmap.scaled(newSize, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+                    m_label->setPixmap(scaledPixmap);
+                    
+                    return false; // Let the event propagate
+                }
+                return false;
+            }
+            
+        private:
+            QLabel* m_label;
+        };
+        
+        // Create and install the filter
+        ResizeEventFilter* filter = new ResizeEventFilter(bgLabel, walletFrame);
+        walletFrame->installEventFilter(filter);
+        
+        // Initial sizing
+        bgLabel->setGeometry(0, 0, walletFrame->width(), walletFrame->height());
+    }
 
     QString windowTitle = tr(PACKAGE_NAME) + " - ";
 #ifdef ENABLE_WALLET
@@ -327,6 +391,28 @@ void BitcoinGUI::createActions()
 {
     QActionGroup *tabGroup = new QActionGroup(this);
 
+    // Create multisig actions
+    multisigAction = new QAction(platformStyle->TextColorIcon(":/icons/multisig"), tr("&Multisig"), this);
+    multisigAction->setStatusTip(tr("Multisig wallet operations"));
+    multisigAction->setToolTip(multisigAction->statusTip());
+
+    createMultisigAction = new QAction(platformStyle->TextColorIcon(":/icons/add"), tr("&Create Multisig Wallet..."), this);
+    createMultisigAction->setStatusTip(tr("Create a new multisig wallet"));
+    createMultisigAction->setToolTip(createMultisigAction->statusTip());
+
+    importMultisigAction = new QAction(platformStyle->TextColorIcon(":/icons/import"), tr("&Import Multisig Wallet..."), this);
+    importMultisigAction->setStatusTip(tr("Import an existing multisig wallet"));
+    importMultisigAction->setToolTip(importMultisigAction->statusTip());
+
+    signMultisigAction = new QAction(platformStyle->TextColorIcon(":/icons/edit"), tr("&Sign Multisig Transaction..."), this);
+    signMultisigAction->setStatusTip(tr("Sign a multisig transaction"));
+    signMultisigAction->setToolTip(signMultisigAction->statusTip());
+
+    broadcastMultisigAction = new QAction(platformStyle->TextColorIcon(":/icons/send"), tr("&Broadcast Multisig Transaction..."), this);
+    broadcastMultisigAction->setStatusTip(tr("Broadcast a signed multisig transaction"));
+    broadcastMultisigAction->setToolTip(broadcastMultisigAction->statusTip());
+
+
     overviewAction = new QAction(platformStyle->SingleColorIcon(":/icons/overview"), tr("&HOME"), this);
     overviewAction->setStatusTip(tr("Show general overview of wallet"));
     overviewAction->setToolTip(overviewAction->statusTip());
@@ -370,6 +456,20 @@ void BitcoinGUI::createActions()
     connect(overviewAction, SIGNAL(triggered()), this, SLOT(gotoOverviewPage()));
     connect(sendCoinsAction, SIGNAL(triggered()), this, SLOT(showNormalIfMinimized()));
     connect(sendCoinsAction, SIGNAL(triggered()), this, SLOT(gotoSendCoinsPage()));
+
+    // Connect multisig actions
+    connect(createMultisigAction, &QAction::triggered, [this]() {
+        if (walletFrame) walletFrame->showMultisigDialog(MultisigDialogMode::CreateWallet);
+    });
+    connect(importMultisigAction, &QAction::triggered, [this]() {
+        if (walletFrame) walletFrame->showMultisigDialog(MultisigDialogMode::ImportWallet);
+    });
+    connect(signMultisigAction, &QAction::triggered, [this]() {
+        if (walletFrame) walletFrame->showMultisigDialog(MultisigDialogMode::SignTransaction);
+    });
+    connect(broadcastMultisigAction, &QAction::triggered, [this]() {
+        if (walletFrame) walletFrame->showMultisigDialog(MultisigDialogMode::BroadcastTransaction);
+    });
     connect(sendCoinsMenuAction, SIGNAL(triggered()), this, SLOT(showNormalIfMinimized()));
     connect(sendCoinsMenuAction, SIGNAL(triggered()), this, SLOT(gotoSendCoinsPage()));
     connect(receiveCoinsAction, SIGNAL(triggered()), this, SLOT(showNormalIfMinimized()));
@@ -482,6 +582,15 @@ void BitcoinGUI::createMenuBar()
         file->addAction(verifyMessageAction);
         file->addAction(paperWalletAction);
         file->addSeparator();
+        
+        // Add multisig submenu
+        QMenu *multisigMenu = file->addMenu(tr("&Multisig"));
+        multisigMenu->addAction(createMultisigAction);
+        multisigMenu->addAction(importMultisigAction);
+        multisigMenu->addAction(signMultisigAction);
+        multisigMenu->addAction(broadcastMultisigAction);
+        file->addSeparator();
+        
         file->addAction(importPrivateKeyAction);
         file->addAction(usedSendingAddressesAction);
         file->addAction(usedReceivingAddressesAction);
@@ -628,6 +737,12 @@ void BitcoinGUI::setWalletActionsEnabled(bool enabled)
     usedReceivingAddressesAction->setEnabled(enabled);
     openAction->setEnabled(enabled);
     paperWalletAction->setEnabled(enabled);
+    
+    // Enable/disable multisig actions
+    createMultisigAction->setEnabled(enabled);
+    importMultisigAction->setEnabled(enabled);
+    signMultisigAction->setEnabled(enabled);
+    broadcastMultisigAction->setEnabled(enabled);
 }
 
 void BitcoinGUI::createTrayIcon(const NetworkStyle *networkStyle)

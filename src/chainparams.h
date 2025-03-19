@@ -82,6 +82,14 @@ public:
     const CCheckpointData& Checkpoints() const { return checkpointData; }
     const ChainTxData& TxData() const { return chainTxData; }
 
+    /** Return the development fund address and script for a given block height */
+    std::string GetDevelopmentFundAddressAtHeight(int height) const;
+    CScript GetDevelopmentFundScriptAtHeight(int height) const;
+    std::string GetDevelopmentFundAddressAtIndex(int i) const;
+    int GetDevelopmentFundStartHeight() const { return vDevelopmentFundStartHeight; };
+    int GetLastDevelopmentFundBlockHeight() const { return vDevelopmentFundLastHeight; }
+    double GetDevelopmentFundPercent() const { return vDevelopmentFundPercent; }
+
 protected:
     CChainParams() {}
 
@@ -101,6 +109,10 @@ protected:
     bool fMineBlocksOnDemand;
     CCheckpointData checkpointData;
     ChainTxData chainTxData;
+    std::vector<std::string> vDevelopmentFundAddress;
+    int vDevelopmentFundStartHeight;
+    int vDevelopmentFundLastHeight;
+    double vDevelopmentFundPercent;
 };
 
 /**

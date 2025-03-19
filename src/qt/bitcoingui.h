@@ -116,6 +116,11 @@ private:
     QAction *openRPCConsoleAction;
     QAction *openAction;
     QAction *showHelpMessageAction;
+    QAction *multisigAction;
+    QAction *createMultisigAction;
+    QAction *importMultisigAction;
+    QAction *signMultisigAction;
+    QAction *broadcastMultisigAction;
 
     QSystemTrayIcon *trayIcon;
     QMenu *trayIconMenu;

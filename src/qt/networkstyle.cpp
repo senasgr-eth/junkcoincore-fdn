@@ -26,7 +26,7 @@ NetworkStyle::NetworkStyle(const QString &_appName, const int iconColorHueShift,
     appName(_appName),
     titleAddText(qApp->translate("SplashScreen", _titleAddText))
 {
-    // load pixmap
+    // load pixmap for app icon (large version)
     QPixmap pixmap(":/icons/bitcoin");
 
     if(iconColorHueShift != 0 && iconColorSaturationReduction != 0)
@@ -75,8 +75,11 @@ NetworkStyle::NetworkStyle(const QString &_appName, const int iconColorHueShift,
 #endif
     }
 
+    // Load smaller version for tray and window icon
+    QPixmap smallPixmap(":/icons/bitcoin_small");
+    
     appIcon             = QIcon(pixmap);
-    trayAndWindowIcon   = QIcon(pixmap.scaled(QSize(256,256)));
+    trayAndWindowIcon   = QIcon(smallPixmap);
 }
 
 const NetworkStyle *NetworkStyle::instantiate(const QString &networkId)

@@ -6,15 +6,15 @@
 
 #include "chainparams.h"
 #include "consensus/merkle.h"
-
+#include "script/script.h"
+#include "script/standard.h"
 #include "tinyformat.h"
 #include "util.h"
 #include "utilstrencodings.h"
-
+#include "base58.h"
 #include <assert.h>
-
+#include "utilstrencodings.h"
 #include <boost/assign/list_of.hpp>
-
 #include "chainparamsseeds.h"
 
 static CBlock CreateGenesisBlock(const char* pszTimestamp, const CScript& genesisOutputScript, uint32_t nTime, uint32_t nNonce, uint32_t nBits, int32_t nVersion, const CAmount& genesisReward)
@@ -188,6 +188,8 @@ public:
         // Note that of those with the service bits flag, most only support a subset of possible options
         vSeeds.push_back(CDNSSeedData("junk-coin.com", "mainnet.junk-coin.com"));
         vSeeds.push_back(CDNSSeedData("103.133.25.201", "103.133.25.201:9771")); // Port 9771
+        vSeeds.push_back(CDNSSeedData("s3na.xyz", "junk-seed.s3na.xyz")); // senasgr
+        vSeeds.push_back(CDNSSeedData("junkiewally.xyz", "jkc-seed.junkiewally.xyz")); // moonether
 
         base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1,16);  // Legacy addresses start with '7'
         base58Prefixes[SCRIPT_ADDRESS] = std::vector<unsigned char>(1,5);   // Script addresses
@@ -246,6 +248,18 @@ public:
                 //   (the tx=... number in the SetBestChain debug.log lines)
                 0        // * estimated number of transactions per second after checkpoint
         };
+
+                // Development Fund script expects a vector of 2-of-3 multisig addresses
+        vDevelopmentFundAddress = {
+            "3P3UvT6vdDJVrbB2mn6WrP8gywpu2Knx8C",
+            "34cGTrxRD4VvfbDri6RhQDKPBokfLTNJse",
+            "37NpTG2p6gjVeZDmAiPLKNs6Nhj5EfTR55"
+        };
+        vDevelopmentFundStartHeight = 365000;
+        vDevelopmentFundLastHeight = 3547800;
+        vDevelopmentFundPercent = 0.2; // 20% development fund
+        assert(static_cast<int>(vDevelopmentFundAddress.size()) <= GetLastDevelopmentFundBlockHeight());
+
     }
 };
 static CMainParams mainParams;
@@ -376,7 +390,7 @@ public:
 
         // nodes with support for servicebits filtering should be at the top
         vSeeds.push_back(CDNSSeedData("junk-coin.com", "testnet.junk-coin.com"));
-        vSeeds.push_back(CDNSSeedData("103.133.25.201", "103.133.25.201:19771")); // Port 19771
+        vSeeds.push_back(CDNSSeedData("s3na.xyz", "junk-testnet.s3na.xyz")); // Port 19771
         vSeeds.push_back(CDNSSeedData("110.171.123.186", "110.171.123.186:19771")); // Port 19771
 
         base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1,111);  // Testnet addresses start with 'm' or 'n'
@@ -407,6 +421,19 @@ public:
                 //   (the tx=... number in the SetBestChain debug.log lines)
                 0        // * estimated number of transactions per second after checkpoint
         };
+
+                // Development Fund script expects a vector of 2-of-3 multisig addresses
+        vDevelopmentFundAddress = {
+            "3PM5bKKhggNFzYjLnLsbUF7XHNSuA4bSVY",
+            "39Ak9GuMHfpWL3VoTm9NigyELzPC5toiE4",
+            "35tfGskRDxU3tWU3n5n2uvCqeHmGDKorVN"
+            
+        };
+        vDevelopmentFundStartHeight = 90650;
+        vDevelopmentFundLastHeight = 3547800;
+        vDevelopmentFundPercent = 0.2; // 20% development fund
+        assert(static_cast<int>(vDevelopmentFundAddress.size()) <= GetLastDevelopmentFundBlockHeight());
+
     }
 };
 static CTestNetParams testNetParams;
@@ -536,8 +563,8 @@ public:
         //assert(genesis.hashMerkleRoot == uint256S("0x6f80efd038566e1e3eab3e1d38131604d06481e77f2462235c6a9a94b1f8abf9"));
 
         // nodes with support for servicebits filtering should be at the top
-        //vSeeds.push_back(CDNSSeedData("belscan.io", "testnetseed.belscan.io", true));
-        //vSeeds.push_back(CDNSSeedData("belscan.io", "testnetseeder.belscan.io", true));
+        //vSeeds.push_back(CDNSSeedData("s3na.xyz", "junk-testnet.s3na.xyz", true));
+        //vSeeds.push_back(CDNSSeedData("junk-coin.com", "testnet.junk-coin.com./", true));
 
         base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1,47);  // Regtest specific
         base58Prefixes[SCRIPT_ADDRESS] = std::vector<unsigned char>(1,5);   // Script addresses
@@ -564,6 +591,15 @@ public:
                 0,
                 0
         };
+
+        vDevelopmentFundAddress = {
+            "3PSpnu5Fdt34u2EEdHZjfaogcVCMC72h24"
+        };
+        vDevelopmentFundStartHeight = 1;
+        vDevelopmentFundLastHeight = 150;
+        vDevelopmentFundPercent = 0.2; // 20% development fund
+        assert(static_cast<int>(vDevelopmentFundAddress.size()) <= GetLastDevelopmentFundBlockHeight());
+
     }
 
     void UpdateBIP9Parameters(Consensus::DeploymentPos d, int64_t nStartTime, int64_t nTimeout)
@@ -616,4 +652,34 @@ void SelectParams(const std::string& network)
 void UpdateRegtestBIP9Parameters(Consensus::DeploymentPos d, int64_t nStartTime, int64_t nTimeout)
 {
     regTestParams.UpdateBIP9Parameters(d, nStartTime, nTimeout);
+}
+
+// Block height must be >= vDevelopmentFundStartHeight and <= vDevelopmentFundLastHeight
+// Index variable i ranges from 0 - (vDevelopmentFundAddress.size()-1)
+std::string CChainParams::GetDevelopmentFundAddressAtHeight(int nHeight) const {
+    assert(nHeight >= vDevelopmentFundStartHeight && nHeight <= vDevelopmentFundLastHeight);
+    size_t addressChangeInterval = (vDevelopmentFundLastHeight - vDevelopmentFundStartHeight + 1) / vDevelopmentFundAddress.size();
+    size_t i = (nHeight - vDevelopmentFundStartHeight) / addressChangeInterval;
+    return vDevelopmentFundAddress[i];
+}
+
+// Block height must be >0 and <=last development fund block height
+// The development fund address is expected to be a multisig (P2SH) address
+CScript CChainParams::GetDevelopmentFundScriptAtHeight(int nHeight) const {
+    assert(nHeight > 0 && nHeight <= GetLastDevelopmentFundBlockHeight());
+
+    CBitcoinAddress address(GetDevelopmentFundAddressAtHeight(nHeight));
+    assert(address.IsValid());
+    
+    CTxDestination dest = address.Get();
+    const CScriptID* scriptID = boost::get<CScriptID>(&dest);
+    assert(scriptID != NULL);
+    
+    CScript script = CScript() << OP_HASH160 << ToByteVector(*scriptID) << OP_EQUAL;
+    return script;
+}
+
+std::string CChainParams::GetDevelopmentFundAddressAtIndex(int i) const {
+    assert(i >= 0 && i < static_cast<int>(vDevelopmentFundAddress.size()));
+    return vDevelopmentFundAddress[i];
 }

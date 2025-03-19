@@ -13,6 +13,7 @@
 #include "consensus/validation.h"
 #include "core_io.h"
 #include "init.h"
+#include "junkcoin.h"
 #include "validation.h"
 #include "miner.h"
 #include "net.h"
@@ -22,6 +23,7 @@
 #include "util.h"
 #include "utilstrencodings.h"
 #include "validationinterface.h"
+#include "wallet/wallet.h"
 
 #include <memory>
 #include <stdint.h>
@@ -434,8 +436,11 @@ UniValue getblocktemplate(const JSONRPCRequest& request)
 
     LOCK(cs_main);
 
+    // Note: Required -mineraddress check is handled later when creating the block template
+
     std::string strMode = "template";
     UniValue lpval = NullUniValue;
+    bool coinbasetxn = true;
     std::set<std::string> setClientRules;
     int64_t nMaxVersionPreVB = -1;
     if (request.params.size() > 0)
@@ -583,9 +588,64 @@ UniValue getblocktemplate(const JSONRPCRequest& request)
         nStart = GetTime();
         fLastTemplateSupportsSegwit = fSupportsSegwit;
 
-        // Create new block
-        CScript scriptDummy = CScript() << OP_TRUE;
-        pblocktemplate = BlockAssembler(Params()).CreateNewBlock(scriptDummy, fMineWitnessTx);
+        // Create new block with proper coinbase script
+        CScript scriptPubKey;
+        static std::string cachedMinerAddress;
+        static CScript cachedMinerScript;
+        
+        // Check if current block is within development fund active range
+        int nHeight = chainActive.Height() + 1;
+        bool isDevFundActive = (nHeight > Params().GetDevelopmentFundStartHeight()) && 
+                              (nHeight <= Params().GetLastDevelopmentFundBlockHeight());
+        
+        // Only use -mineraddress when development fund is active
+        if (isDevFundActive) {
+            std::string strMinerAddress = GetArg("-mineraddress", "");
+            if (!strMinerAddress.empty()) {
+                // Only revalidate if address changed
+                if (strMinerAddress != cachedMinerAddress) {
+                    CBitcoinAddress addr(strMinerAddress);
+                    if (!addr.IsValid()) {
+                        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, 
+                            strprintf("Invalid miner address: '%s'. Must be a valid Junkcoin address.", strMinerAddress));
+                    }
+                    cachedMinerScript = GetScriptForDestination(addr.Get());
+                    if (cachedMinerScript.empty()) {
+                        throw JSONRPCError(RPC_INTERNAL_ERROR, "Failed to create script for miner address");
+                    }
+                    cachedMinerAddress = strMinerAddress;
+                }
+                scriptPubKey = cachedMinerScript;
+            } else {
+                // Development fund active but no -mineraddress specified
+#ifdef ENABLE_WALLET
+                if (!pwalletMain)
+                    throw JSONRPCError(RPC_METHOD_NOT_FOUND, "Wallet disabled and -mineraddress not set. Please specify a valid miner address when development fund is active.");
+                // Get new key from wallet
+                CPubKey pubkey;
+                if (!pwalletMain->GetKeyFromPool(pubkey))
+                    throw JSONRPCError(RPC_WALLET_KEYPOOL_RAN_OUT, "Error: Keypool ran out. Please specify a miner address using -mineraddress.");
+                scriptPubKey = GetScriptForDestination(pubkey.GetID());
+#else
+                throw JSONRPCError(RPC_METHOD_NOT_FOUND, "Junkcoin compiled without wallet and -mineraddress not set. Please specify a valid miner address when development fund is active.");
+#endif
+            }
+        } else {
+            // Outside development fund block range - fallback to original behavior
+            // Ignore -mineraddress
+#ifdef ENABLE_WALLET
+            if (!pwalletMain)
+                throw JSONRPCError(RPC_METHOD_NOT_FOUND, "Wallet disabled and not in development fund block range.");
+            // Get new key from wallet
+            CPubKey pubkey;
+            if (!pwalletMain->GetKeyFromPool(pubkey))
+                throw JSONRPCError(RPC_WALLET_KEYPOOL_RAN_OUT, "Error: Keypool ran out.");
+            scriptPubKey = GetScriptForDestination(pubkey.GetID());
+#else
+            throw JSONRPCError(RPC_METHOD_NOT_FOUND, "Junkcoin compiled without wallet and not in development fund block range.");
+#endif
+        }
+        pblocktemplate = BlockAssembler(Params()).CreateNewBlock(scriptPubKey, fMineWitnessTx);
         if (!pblocktemplate)
             throw JSONRPCError(RPC_OUT_OF_MEMORY, "Out of memory");
 
@@ -603,24 +663,26 @@ UniValue getblocktemplate(const JSONRPCRequest& request)
     const bool fPreSegWit = (THRESHOLD_ACTIVE != VersionBitsState(pindexPrev, consensusParams, Consensus::DEPLOYMENT_SEGWIT, versionbitscache));
 
     UniValue aCaps(UniValue::VARR); aCaps.push_back("proposal");
-
+    UniValue txCoinbase = NullUniValue;
     UniValue transactions(UniValue::VARR);
     map<uint256, int64_t> setTxIndex;
     int i = 0;
+    
+    // Proses transaksi untuk coinbase dan non-coinbase
     for (const auto& it : pblock->vtx) {
         const CTransaction& tx = *it;
         uint256 txHash = tx.GetHash();
         setTxIndex[txHash] = i++;
-
-        if (tx.IsCoinBase())
+    
+        if (tx.IsCoinBase() && !coinbasetxn)
             continue;
-
+    
         UniValue entry(UniValue::VOBJ);
-
+    
         entry.pushKV("data", EncodeHexTx(tx));
         entry.pushKV("txid", txHash.GetHex());
         entry.pushKV("hash", tx.GetWitnessHash().GetHex());
-
+    
         UniValue deps(UniValue::VARR);
         BOOST_FOREACH (const CTxIn &in, tx.vin)
         {
@@ -628,7 +690,7 @@ UniValue getblocktemplate(const JSONRPCRequest& request)
                 deps.push_back(setTxIndex[in.prevout.hash]);
         }
         entry.pushKV("depends", deps);
-
+    
         int index_in_template = i - 1;
         entry.pushKV("fee", pblocktemplate->vTxFees[index_in_template]);
         int64_t nTxSigOps = pblocktemplate->vTxSigOpsCost[index_in_template];
@@ -638,8 +700,37 @@ UniValue getblocktemplate(const JSONRPCRequest& request)
         }
         entry.pushKV("sigops", nTxSigOps);
         entry.pushKV("weight", GetTransactionWeight(tx));
-
-        transactions.push_back(entry);
+        if (tx.IsCoinBase()) {
+            // Get block height to check if we're in development fund active range
+            int nHeight = pindexPrev->nHeight + 1;
+            bool isDevFundActive = (nHeight > Params().GetDevelopmentFundStartHeight()) && 
+                                 (nHeight <= Params().GetLastDevelopmentFundBlockHeight());
+                                 
+            // Display development fund output if applicable and in active block range
+            if (isDevFundActive && tx.vout.size() > 1) {
+                // Development fund is always the second output in coinbase
+                entry.pushKV("developmentfund", (int64_t)tx.vout[1].nValue);
+    
+                // GITHUB issue #66 - Add founder address to gbt
+                const CScript & scriptPublicKey = tx.vout[1].scriptPubKey;
+                std::vector<CTxDestination> addresses;
+                txnouttype whichType;
+                int nRequired;
+    
+                ExtractDestinations(scriptPublicKey, whichType, addresses, nRequired);
+                UniValue o(UniValue::VARR);
+                for (const CTxDestination& addr : addresses) {
+                    // Use basic address format without additional encode checking
+                    o.push_back(CBitcoinAddress(addr).ToString());
+                }
+                entry.pushKV("developmentfundaddress", o);
+            }
+            // If not in active block range, no development fund info is included in the template
+            entry.pushKV("required", true);
+            txCoinbase = entry;
+        } else {
+            transactions.push_back(entry);
+        }
     }
 
     UniValue aux(UniValue::VOBJ);
@@ -714,8 +805,15 @@ UniValue getblocktemplate(const JSONRPCRequest& request)
 
     result.pushKV("previousblockhash", pblock->hashPrevBlock.GetHex());
     result.pushKV("transactions", transactions);
-    result.pushKV("coinbaseaux", aux);
-    result.pushKV("coinbasevalue", (int64_t)pblock->vtx[0]->vout[0].nValue);
+    if (coinbasetxn) {
+        assert(txCoinbase.isObject());
+        result.pushKV("coinbasetxn", txCoinbase);
+        result.pushKV("coinbaseaux", aux);
+        result.pushKV("coinbasevalue", (int64_t)(*pblock->vtx[0]).vout[0].nValue);
+    } else {
+        result.pushKV("coinbaseaux", aux);
+        result.pushKV("coinbasevalue", (int64_t)(*pblock->vtx[0]).vout[0].nValue);
+    }
     result.pushKV("longpollid", chainActive.Tip()->GetBlockHash().GetHex() + i64tostr(nTransactionsUpdatedLast));
     result.pushKV("target", hashTarget.GetHex());
     result.pushKV("mintime", (int64_t)pindexPrev->GetMedianTimePast()+1);
@@ -1257,8 +1355,7 @@ UniValue getauxblockbip22(const JSONRPCRequest& request)
         throw JSONRPCError(RPC_INVALID_PARAMETER, "block hash unknown");
     CBlock& block = *mit->second;
 
-    const std::vector<unsigned char> vchAuxPow
-      = ParseHex(request.params[1].get_str());
+    const std::vector<unsigned char> vchAuxPow = ParseHex(request.params[1].get_str());
     CDataStream ss(vchAuxPow, SER_GETHASH, PROTOCOL_VERSION);
     CAuxPow pow;
     ss >> pow;
@@ -1347,6 +1444,42 @@ UniValue getauxblock(const JSONRPCRequest& request)
     return response.isNull();
 }
 
+UniValue getblocksubsidy(const JSONRPCRequest& request)
+{
+    if (request.fHelp || request.params.size() > 1)
+        throw std::runtime_error(
+            "getblocksubsidy height\n"
+            "\nReturns block subsidy reward, taking into account the mining slow start and the development fund (20% of base reward), of block at index provided.\n"
+            "\nArguments:\n"
+            "1. height         (numeric, optional) The block height.  If not provided, defaults to the current height of the chain.\n"
+            "\nResult:\n"
+            "{\n"
+            "  \"miner\" : x.xxx           (numeric) The mining reward amount in " + CURRENCY_UNIT + ".\n"
+            "  \"developmentfund\" : x.xxx        (numeric) The development fund amount (20% of base reward) in " + CURRENCY_UNIT + ".\n"
+            "}\n"
+            "\nExamples:\n"
+            + HelpExampleCli("getblocksubsidy", "1000")
+            + HelpExampleRpc("getblocksubsidy", "1000")
+        );
+
+    LOCK(cs_main);
+    int nHeight = (request.params.size()==1) ? request.params[0].get_int() : chainActive.Height();
+    if (nHeight < 0)
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "Block height out of range");
+
+    CAmount nReward = GetJunkcoinBlockSubsidy(nHeight, 0, Params().GetConsensus(nHeight), uint256());
+    CAmount nDevelopmentFund = 0;
+    if ((nHeight >= Params().GetDevelopmentFundStartHeight()) && (nHeight <= Params().GetLastDevelopmentFundBlockHeight())) {
+        nDevelopmentFund = nReward * 0.2; // 20% development fund
+        nReward -= nDevelopmentFund;
+    }
+
+    UniValue result(UniValue::VOBJ);
+    result.pushKV("miner", ValueFromAmount(nReward));
+    result.pushKV("developmentfund", ValueFromAmount(nDevelopmentFund));
+    return result;
+}
+
 /* ************************************************************************** */
 
 static const CRPCCommand commands[] =
@@ -1357,6 +1490,7 @@ static const CRPCCommand commands[] =
     { "mining",             "prioritisetransaction",  &prioritisetransaction,  true,  {"txid","priority_delta","fee_delta"} },
     { "mining",             "getblocktemplate",       &getblocktemplate,       true,  {"template_request"} },
     { "mining",             "submitblock",            &submitblock,            true,  {"hexdata","parameters"} },
+    { "mining",             "getblocksubsidy",       &getblocksubsidy,        true,  {"height"} },
 
     { "mining",             "getauxblock",            &getauxblock,            true,  {"hash", "auxpow"} },
     { "mining",             "createauxblock",         &createauxblock,         true,  {"address"} },

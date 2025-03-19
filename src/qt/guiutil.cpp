@@ -7,6 +7,7 @@
 
 #include "bitcoinaddressvalidator.h"
 #include "bitcoinunits.h"
+#include "guiconstants.h"
 #include "qvalidatedlineedit.h"
 #include "walletmodel.h"
 
@@ -103,8 +104,7 @@ QString dateTimeStr(qint64 nTime)
 
 QFont fixedPitchFont()
 {
-    QFont font("Cursive");
-    font.setFamily("Comic Sans MS");
+    QFont font(FONT_FAMILY, FONT_SIZE_NORMAL);
     return font;
 }
 
@@ -442,6 +442,10 @@ void openDebugLogfile()
 
 void SubstituteFonts(const QString& language)
 {
+    // Set a single consistent font for the entire application
+    QFont appFont(FONT_FAMILY, FONT_SIZE_NORMAL);
+    QApplication::setFont(appFont);
+    
 #if defined(Q_OS_MAC)
 // Background:
 // OSX's default font changed in 10.9 and Qt is unable to find it with its

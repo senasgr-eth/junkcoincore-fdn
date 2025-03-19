@@ -37,6 +37,7 @@
 #include "utilstrencodings.h"
 #include "validationinterface.h"
 #include "versionbits.h"
+#include "junkcoin.h"
 #include "warnings.h"
 
 #include <atomic>
@@ -1287,7 +1288,7 @@ void CheckForkWarningConditions()
     if (pindexBestForkTip || (pindexBestInvalid && pindexBestInvalid->nChainWork > chainActive.Tip()->nChainWork + (GetBlockProof(*chainActive.Tip()) * 30)))
     {
         //printf("pindexBestForkTip: %s\n", pindexBestForkTip ? pindexBestForkTip->GetBlockHash().ToString().c_str() : "NULL");
-        printf("Want pindexBestInvalid->nChainWork %d > chainActive.Tip()->nChainWork: %d\n", pindexBestInvalid->nChainWork, chainActive.Tip()->nChainWork + (GetBlockProof(*chainActive.Tip()) * 30));
+        printf("Want pindexBestInvalid->nChainWork %s > chainActive.Tip()->nChainWork: %s\n", pindexBestInvalid->nChainWork.ToString().c_str(), (chainActive.Tip()->nChainWork + (GetBlockProof(*chainActive.Tip()) * 30)).ToString().c_str());
         if (!GetfLargeWorkForkFound() && pindexBestForkBase)
         {
             std::string warning = std::string("'Warning: Large-work fork detected, forking after block ") +
@@ -3203,6 +3204,29 @@ bool ContextualCheckBlock(const CBlock& block, CValidationState& state, const CB
             return state.DoS(100, false, REJECT_INVALID, "bad-cb-height", false, "block height mismatch in coinbase");
         }
     }
+
+    // Check if block is within development fund range
+    bool isDevFundActive = (nHeight > chainParams.GetDevelopmentFundStartHeight()) && 
+                           (nHeight <= chainParams.GetLastDevelopmentFundBlockHeight());
+
+    // Enforce Development Fund: 20% of base block reward (excluding fees) - only active in specific block range
+    if (isDevFundActive) {
+        bool found = false;
+        CAmount baseReward = GetJunkcoinBlockSubsidy(nHeight, 0, consensusParams, block.hashPrevBlock);
+        CAmount expectedDevFund = baseReward * chainParams.GetDevelopmentFundPercent(); // 20% of base reward only
+        
+        for (const CTxOut& output : block.vtx[0]->vout) {
+            if (output.scriptPubKey == chainParams.GetDevelopmentFundScriptAtHeight(nHeight)) {
+                if (output.nValue == expectedDevFund) {
+                    found = true;
+                    break;
+                }
+            }
+        }
+        if (!found) {
+            return state.DoS(100, false, REJECT_INVALID, "cb-no-development-fund", false, "development fund missing");
+        }
+    } // Outside this range, don't enforce development fund (pre-development fund behavior)
 
     // Validation for witness commitments.
     // * We compute the witness hash (which is the hash including witnesses) of all the block's transactions, except the

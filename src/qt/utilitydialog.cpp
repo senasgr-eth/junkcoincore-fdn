@@ -13,6 +13,7 @@
 #include "ui_paperwalletdialog.h"
 
 #include "bitcoinunits.h"
+#include "guiconstants.h"
 
 #ifdef ENABLE_WALLET
 #include "sendcoinsdialog.h"
@@ -200,11 +201,9 @@ PaperWalletDialog::PaperWalletDialog(QWidget *parent) :
 
     ui->buttonBox->addButton(tr("Close"), QDialogButtonBox::RejectRole);
 
-    // Begin with a small bold monospace font for the textual version of the key and address.
-    QFont font("Courier");
+    // Use the application's global font for consistency
+    QFont font(FONT_FAMILY, FONT_SIZE_NORMAL);
     font.setBold(true);
-    font.setStyleHint(QFont::TypeWriter);
-    font.setPixelSize(1);
     ui->addressText->setFont(font);
     ui->privateKeyText->setFont(font);
     ui->addressText->setAlignment(Qt::AlignJustify);

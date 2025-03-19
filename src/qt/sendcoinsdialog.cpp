@@ -10,6 +10,7 @@
 #include "bitcoinunits.h"
 #include "clientmodel.h"
 #include "coincontroldialog.h"
+#include "guiconstants.h"
 #include "guiutil.h"
 #include "optionsmodel.h"
 #include "platformstyle.h"
@@ -18,6 +19,11 @@
 
 #include "base58.h"
 #include "chainparams.h"
+#include "core_io.h"
+#include <QFileDialog>
+#include <QDir>
+#include <QFile>
+#include <QTextStream>
 #include "junkcoin-fees.h"
 #include "wallet/coincontrol.h"
 #include "validation.h" // mempool and minRelayTxFeeRate
@@ -49,10 +55,12 @@ SendCoinsDialog::SendCoinsDialog(const PlatformStyle *_platformStyle, QWidget *p
         ui->addButton->setIcon(QIcon());
         ui->clearButton->setIcon(QIcon());
         ui->sendButton->setIcon(QIcon());
+        ui->createUnsignedButton->setIcon(QIcon());
     } else {
         ui->addButton->setIcon(_platformStyle->SingleColorIcon(":/icons/add"));
         ui->clearButton->setIcon(_platformStyle->SingleColorIcon(":/icons/remove"));
         ui->sendButton->setIcon(_platformStyle->SingleColorIcon(":/icons/send"));
+        ui->createUnsignedButton->setIcon(_platformStyle->SingleColorIcon(":/icons/edit"));
     }
 
     GUIUtil::setupAddressWidget(ui->lineEditCoinControlChange, this);
@@ -195,6 +203,99 @@ SendCoinsDialog::~SendCoinsDialog()
     delete ui;
 }
 
+void SendCoinsDialog::on_createUnsignedButton_clicked()
+{
+    if(!model || !model->getOptionsModel())
+        return;
+
+    createUnsignedTransaction();
+}
+
+void SendCoinsDialog::createUnsignedTransaction()
+{
+    QList<SendCoinsRecipient> recipients;
+    bool valid = true;
+
+    for(int i = 0; i < ui->entries->count(); ++i)
+    {
+        SendCoinsEntry *entry = qobject_cast<SendCoinsEntry*>(ui->entries->itemAt(i)->widget());
+        if(entry)
+        {
+            if(entry->validate())
+            {
+                recipients.append(entry->getValue());
+            }
+            else
+            {
+                valid = false;
+            }
+        }
+    }
+
+    if(!valid || recipients.isEmpty())
+    {
+        return;
+    }
+
+    // Format confirmation message
+    QStringList formatted;
+    for (const SendCoinsRecipient &rcp : recipients)
+    {
+        formatted.append(tr("<b>%1</b> to %2 (%3)").arg(BitcoinUnits::formatHtmlWithUnit(model->getOptionsModel()->getDisplayUnit(), rcp.amount),
+                                                        rcp.label.toHtmlEscaped(),
+                                                        rcp.address));
+    }
+
+    WalletModel::UnlockContext ctx(model->requestUnlock());
+    if(!ctx.isValid())
+    {
+        return;
+    }
+
+    // Prepare transaction
+    WalletModelTransaction currentTransaction(recipients);
+    WalletModel::SendCoinsReturn prepareStatus;
+
+    // Always use the "real" fee rather than the confirmation target
+    CCoinControl coinControl;
+    // Set the watch-only flag to true to allow creating transactions without signing them
+    coinControl.fAllowWatchOnly = true; // This allows creating transactions with watch-only addresses
+    // The third parameter (createUnsigned=true) in prepareTransaction will ensure no signatures are added
+    prepareStatus = model->prepareTransaction(currentTransaction, &coinControl, true); // Pass true to indicate we want an unsigned transaction
+
+    // Process prepareStatus and on error generate message shown to user
+    processSendCoinsReturn(prepareStatus,
+        BitcoinUnits::formatWithUnit(model->getOptionsModel()->getDisplayUnit(), currentTransaction.getTransactionFee()));
+
+    if(prepareStatus.status != WalletModel::OK) {
+        return;
+    }
+
+    // Save the unsigned transaction to a file
+    QString fileName = QFileDialog::getSaveFileName(this,
+        tr("Save Unsigned Transaction"), QDir::homePath(),
+        tr("Unsigned Transaction (*.hex);;All Files (*)"));
+
+    if (fileName.isEmpty())
+        return;
+
+    CWalletTx* wtx = currentTransaction.getTransaction();
+    if (wtx && wtx->tx) {
+        const CTransaction tx(*wtx->tx);
+        std::string strHex = EncodeHexTx(tx);
+        QFile file(fileName);
+        if (file.open(QIODevice::WriteOnly)) {
+            QTextStream stream(&file);
+            stream << QString::fromStdString(strHex);
+            file.close();
+            QMessageBox::information(this, tr("Transaction created"),
+                tr("The unsigned transaction was created successfully and has been saved to %1").arg(fileName));
+        } else {
+            QMessageBox::critical(this, tr("Error"), tr("Could not write to file %1").arg(fileName));
+        }
+    }
+}
+
 void SendCoinsDialog::on_sendButton_clicked()
 {
     if(!model || !model->getOptionsModel())
@@ -266,8 +367,8 @@ void SendCoinsDialog::on_sendButton_clicked()
         // generate bold amount string
         QString amount = "<b>" + BitcoinUnits::formatHtmlWithUnit(model->getOptionsModel()->getDisplayUnit(), rcp.amount);
         amount.append("</b>");
-        // generate monospace address string
-        QString address = "<span style='font-family: monospace;'>" + rcp.address;
+        // generate address string with consistent font
+        QString address = "<span style='font-family: " + FONT_FAMILY + "'>" + rcp.address;
         address.append("</span>");
 
         QString recipientElement;

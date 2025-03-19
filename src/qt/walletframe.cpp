@@ -7,6 +7,7 @@
 
 #include "bitcoingui.h"
 #include "walletview.h"
+#include "multisigdialog.h"
 
 #include <cstdio>
 #include <iostream>
@@ -216,4 +217,44 @@ WalletView *WalletFrame::currentWalletView()
 void WalletFrame::outOfSyncWarningClicked()
 {
     Q_EMIT requestedSyncWarningInfo();
+}
+
+void WalletFrame::showMultisigDialog(MultisigDialogMode mode)
+{
+    WalletView *walletView = currentWalletView();
+    if (!walletView)
+        return;
+
+    MultisigDialog *dialog = new MultisigDialog(platformStyle, this);
+    
+    // Set the current wallet model as default
+    dialog->setModel(walletView->getWalletModel());
+    
+    // Add all available wallet models to the dialog
+    QMap<QString, WalletView*>::const_iterator i;
+    for (i = mapWalletViews.constBegin(); i != mapWalletViews.constEnd(); ++i) {
+        QString walletName = i.key();
+        WalletModel* walletModel = i.value()->getWalletModel();
+        if (walletModel) {
+            dialog->addWalletModel(walletName, walletModel);
+        }
+    }
+
+    // Set the initial tab based on the mode
+    switch (mode) {
+        case MultisigDialogMode::CreateWallet:
+            dialog->showTab(MultisigDialog::CreateWallet);
+            break;
+        case MultisigDialogMode::ImportWallet:
+            dialog->showTab(MultisigDialog::ImportWallet);
+            break;
+        case MultisigDialogMode::SignTransaction:
+            dialog->showTab(MultisigDialog::SignTransaction);
+            break;
+        case MultisigDialogMode::BroadcastTransaction:
+            dialog->showTab(MultisigDialog::BroadcastTransaction);
+            break;
+    }
+
+    dialog->show();
 }
